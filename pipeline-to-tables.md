@@ -20,12 +20,12 @@ Inside the nf-core/taxprofiler output folder (`--outdir`), each profiler has its
 
 | Profiler | Files | What we keep |
 |---|---|---|
-| MetaPhlAn | `metaphlan/<database>/<sample>*.metaphlan_profile.txt` | species rows, NCBI taxonomy ID, relative abundance (%) |
-| mOTUs | `motus/<database>/<sample>*.out` | species, NCBI taxonomy ID, read counts |
-| Kraken2 + Bracken | `bracken/<database>/<sample>*.bracken.tsv` | species, NCBI taxonomy ID, re-estimated reads (`new_est_reads`) |
-| sylph | `sylph/<database>/<sample>*.sylphmpa` | species, GTDB lineage, taxonomic and sequence abundance (%) |
-| fastp | `fastp/<sample>*.fastp.json` | read pairs before and after quality control |
-| Kraken2 | `kraken2/<database>/<sample>*.kraken2.report.txt` | number of unclassified reads |
+| MetaPhlAn | <code>metaphlan/<wbr>&lt;database&gt;/<wbr>&lt;sample&gt;*.<wbr>metaphlan_profile.txt</code> | species rows, NCBI taxonomy ID, relative abundance (%) |
+| mOTUs | <code>motus/<wbr>&lt;database&gt;/<wbr>&lt;sample&gt;*.<wbr>out</code> | species, NCBI taxonomy ID, read counts |
+| Kraken2 + Bracken | <code>bracken/<wbr>&lt;database&gt;/<wbr>&lt;sample&gt;*.<wbr>bracken.tsv</code> | species, NCBI taxonomy ID, re-estimated reads (`new_est_reads`) |
+| sylph | <code>sylph/<wbr>&lt;database&gt;/<wbr>&lt;sample&gt;*.<wbr>sylphmpa</code> | species, GTDB lineage, taxonomic and sequence abundance (%) |
+| fastp | <code>fastp/<wbr>&lt;sample&gt;*.<wbr>fastp.json</code> | read pairs before and after quality control |
+| Kraken2 | <code>kraken2/<wbr>&lt;database&gt;/<wbr>&lt;sample&gt;*.<wbr>kraken2.report.txt</code> | number of unclassified reads |
 
 ::::::::::::::::::::::::::::::::::::::::::::::::
 
@@ -38,27 +38,33 @@ library(readr)
 library(dplyr)
 library(tidyr)
 
-results <- "taxprofiler_results"   # the pipeline's output folder (--outdir)
-samples <- c("Gut_sample1", "Gut_sample2", "Gut_sample3", "Gut_sample4", "Gut_sample5")
-out_dir <- "my_tables"             # a new folder, so the workshop data/ is not overwritten
+# the pipeline's output folder (--outdir)
+results <- "taxprofiler_results"
+# your sample IDs, as in the samplesheet
+samples <- c("Gut_sample1", "Gut_sample2", "Gut_sample3",
+             "Gut_sample4", "Gut_sample5")
+# a new folder, so the workshop data/ is not overwritten
+out_dir <- "my_tables"
 dir.create(out_dir, showWarnings = FALSE)
 ```
 
 Three small functions do the work that is the same for every profiler:
 
 ```r
-# Find one output file per sample for a profiler, e.g. all MetaPhlAn profiles.
+# Find one output file per sample for a profiler,
+# e.g. all MetaPhlAn profiles.
 find_files <- function(folder, pattern) {
   files <- list.files(file.path(results, folder), pattern = pattern,
                       recursive = TRUE, full.names = TRUE)
   if (length(files) != length(samples)) {
-    stop("Expected ", length(samples), " files in ", folder, ", found ", length(files))
+    stop("Expected ", length(samples), " files in ", folder,
+         ", found ", length(files))
   }
   files
 }
 
-# Which sample does a file belong to? File names start with the sample ID,
-# followed by "_" or "." (e.g. Gut_sample1_db1.bracken.tsv).
+# Which sample does a file belong to? File names start with the
+# sample ID, followed by "_" or "." (e.g. Gut_sample1_db1.bracken.tsv).
 sample_of <- function(file) {
   for (s in samples) {
     if (grepl(paste0("^", s, "[._]"), basename(file))) return(s)
@@ -74,7 +80,8 @@ to_wide <- function(long) {
     mutate(name = first(name)) |>
     group_by(taxonomy_id, name, sample_id) |>
     summarise(value = sum(value), .groups = "drop") |>
-    pivot_wider(names_from = sample_id, values_from = value, values_fill = 0) |>
+    pivot_wider(names_from = sample_id, values_from = value,
+                values_fill = 0) |>
     select(taxonomy_id, name, all_of(samples)) |>
     arrange(desc(rowSums(across(all_of(samples)))))
 }
@@ -89,12 +96,17 @@ A MetaPhlAn profile starts with a few lines beginning with `#`, then has one row
 ```r
 read_metaphlan <- function(file) {
   read_tsv(file, comment = "#", quote = "",
-           col_names = c("clade_name", "ncbi_tax_id", "relative_abundance", "additional_species"),
+           col_names = c("clade_name", "ncbi_tax_id",
+                         "relative_abundance", "additional_species"),
            col_types = "ccdc") |>
-    filter(grepl("(^|\\|)s__[^|]*$", clade_name)) |>     # species rows only
+    # species rows only
+    filter(grepl("(^|\\|)s__[^|]*$", clade_name)) |>
     mutate(species     = sub(".*s__", "", clade_name),
-           taxonomy_id = sub(".*\\|", "", ncbi_tax_id),    # last ID in the path
-           taxonomy_id = ifelse(taxonomy_id == "", paste0("MetaPhlAn:", species), taxonomy_id),
+           # the last ID in the path
+           taxonomy_id = sub(".*\\|", "", ncbi_tax_id),
+           taxonomy_id = ifelse(taxonomy_id == "",
+                                paste0("MetaPhlAn:", species),
+                                taxonomy_id),
            name        = gsub("_", " ", species),
            sample_id   = sample_of(file)) |>
     select(sample_id, taxonomy_id, name, value = relative_abundance)
@@ -113,13 +125,15 @@ A mOTUs profile has three columns: the mOTU name with its ID in brackets (`Gemel
 ```r
 read_motus <- function(file) {
   read_tsv(file, comment = "#", quote = "",
-           col_names = c("label", "ncbi_tax_id", "count"), col_types = "ccd") |>
+           col_names = c("label", "ncbi_tax_id", "count"),
+           col_types = "ccd") |>
     filter(count > 0) |>
     mutate(motu_id     = sub(".*\\[(.*)\\]$", "\\1", label),
            name        = sub("\\s*\\[[^]]*\\]$", "", label),
            taxonomy_id = case_when(
              startsWith(label, "unassigned") ~ "-1",
-             is.na(ncbi_tax_id) ~ paste0("mOTUs:", motu_id),   # no NCBI species
+             # mOTUs without an NCBI species keep their mOTU ID
+             is.na(ncbi_tax_id) ~ paste0("mOTUs:", motu_id),
              TRUE ~ ncbi_tax_id),
            sample_id   = sample_of(file)) |>
     select(sample_id, taxonomy_id, name, value = count)
@@ -137,8 +151,11 @@ Bracken's species report is already one row per species, with a header. `new_est
 
 ```r
 read_bracken <- function(file) {
-  read_tsv(file, quote = "", col_types = cols(taxonomy_id = "c", .default = col_guess())) |>
-    transmute(sample_id = sample_of(file), taxonomy_id, name, value = new_est_reads)
+  read_tsv(file, quote = "",
+           col_types = cols(taxonomy_id = "c",
+                            .default = col_guess())) |>
+    transmute(sample_id = sample_of(file), taxonomy_id, name,
+              value = new_est_reads)
 }
 
 bracken <- find_files("bracken", "\\.bracken\\.tsv$") |>
@@ -153,12 +170,13 @@ sylph-tax writes a MetaPhlAn-style table with GTDB names: the lineage (`d__Bacte
 
 ```r
 read_sylph <- function(file) {
-  read_tsv(file, comment = "#", quote = "", col_types = cols(.default = "c")) |>
+  read_tsv(file, comment = "#", quote = "",
+           col_types = cols(.default = "c")) |>
     select(clade_name = 1, taxonomic = 2, sequence = 3) |>
     filter(grepl("(^|\\|)s__[^|]*$", clade_name)) |>
     mutate(across(c(taxonomic, sequence), as.numeric),
            name         = sub(".*s__", "", clade_name),
-           taxonomy_id  = name,                          # GTDB has no taxonomy IDs
+           taxonomy_id  = name,   # GTDB has no taxonomy IDs
            gtdb_lineage = gsub("|", ";", clade_name, fixed = TRUE),
            sample_id    = sample_of(file))
 }
@@ -194,16 +212,21 @@ read_fastp <- function(file) {
 }
 
 read_kraken2_report <- function(file) {
-  report <- read_tsv(file, col_names = FALSE, quote = "", col_types = cols(.default = "c"))
-  unclassified <- sum(as.numeric(report$X2[report$X5 == "0"]))   # taxid 0
-  classified   <- sum(as.numeric(report$X2[report$X5 == "1"]))   # taxid 1 = root
+  report <- read_tsv(file, col_names = FALSE, quote = "",
+                     col_types = cols(.default = "c"))
+  # column 2 = reads in the clade, column 5 = taxonomy ID
+  unclassified <- sum(as.numeric(report$X2[report$X5 == "0"]))
+  classified   <- sum(as.numeric(report$X2[report$X5 == "1"]))  # root
   tibble(sample_id = sample_of(file),
-         kraken2_unclassified_pct = round(100 * unclassified / (unclassified + classified), 2))
+         kraken2_unclassified_pct =
+           round(100 * unclassified / (unclassified + classified), 2))
 }
 
-metadata <- bind_rows(lapply(find_files("fastp", "\\.fastp\\.json$"), read_fastp)) |>
-  left_join(bind_rows(lapply(find_files("kraken2", "kraken2\\.report\\.txt$"),
-                             read_kraken2_report)),
+fastp_files   <- find_files("fastp", "\\.fastp\\.json$")
+kraken2_files <- find_files("kraken2", "kraken2\\.report\\.txt$")
+
+metadata <- bind_rows(lapply(fastp_files, read_fastp)) |>
+  left_join(bind_rows(lapply(kraken2_files, read_kraken2_report)),
             by = "sample_id")
 ```
 

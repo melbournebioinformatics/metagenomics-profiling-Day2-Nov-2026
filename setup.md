@@ -36,13 +36,23 @@ This intermediate workshop assumes a basic knowledge of R and familiarity with t
 
 ## Prior to the workshop
 
+::::::::::::::::::::::::::::::::::::: callout
+
+### Attending in person? No setup needed
+
+If you are attending the workshop **in person**, you do not need to install or download anything. We have set up an RStudio application with R and all the packages for this workshop already installed, and the workshop data already in `/data/workshop_data`. You will receive your own account for it. Please bring a laptop with [Chrome](https://www.google.com/chrome/) or [Firefox](https://www.mozilla.org/en-US/firefox/) to log in.
+
+
+The software installation and data download steps below are **only for people following the workshop remotely**. The required knowledge applies to everyone.
+
+::::::::::::::::::::::::::::::::::::::::::::::::
+
 :::: checklist
 
 ## REQUIRED KNOWLEDGE
 
-- This workshop assumes participants have a **basic understanding of R**, including variables, data frames, installing and loading packages, and running code in RStudio, or have previously attended an Introduction to R workshop. Please review introductory materials [here](https://melbournebioinformatics.github.io/intro-to-r/).
+- This workshop assumes participants have a **basic understanding of R**, including variables, data frames, installing and loading packages, and running code in RStudio, or have previously attended an Introduction to R workshop. Please review the [Melbourne Bioinformatics Introduction to R materials](https://melbournebioinformatics.github.io/intro-to-r/).
 - Familiarity with the content of **Day 1**: *Taxonomic and functional profiling from shotgun metagenomics data with nf-core*. We will recap the key points at the start of the session, but you will get the most out of Day 2 if you know what the nf-core/taxprofiler outputs are.
-- Installation of R (version 4.6.0 or later) and RStudio
 ::::
 
 
@@ -51,10 +61,10 @@ This intermediate workshop assumes a basic knowledge of R and familiarity with t
 
 ## REQUIRED SOFTWARE
 
-Attendees are required to bring their own laptop computers (Windows, macOS or Linux) with at least 8 GB of RAM and about 5 GB of free disk space. **Please ensure you have installed:**
+If you are following the workshop remotely, you need your own laptop (Windows, macOS or Linux) with at least 8 GB of RAM and about 5 GB of free disk space. **Please ensure you have installed:**
 
 - [Chrome](https://www.google.com/chrome/) or [Firefox](https://www.mozilla.org/en-US/firefox/)
-- [R](https://cran.ms.unimelb.edu.au/), **version 4.6.0 or later** (download and install the latest version of R using the UniMelb mirror)
+- R, **version 4.6.0 or later**: download and install the latest version from the [UniMelb CRAN mirror](https://cran.ms.unimelb.edu.au/)
 - [RStudio Desktop](https://posit.co/download/rstudio-desktop/) (install R **before** RStudio, so RStudio can find it)
 - **R packages** required for this workshop (see below)
 
@@ -120,7 +130,7 @@ The current Bioconductor release (3.23) requires R 4.6. Most of the packages we 
 
 ### Having trouble?
 
-If any package returns `FALSE`, try installing it again on its own, e.g. `BiocManager::install("ANCOMBC")`, and read the error message carefully. The most common causes are an outdated R version and, on Linux, missing system libraries. If you are still stuck, email us at [bioinformatics-training@unimelb.edu.au](mailto:bioinformatics-training@unimelb.edu.au) with a screenshot of the error **before** the workshop.
+If any package returns `FALSE`, try installing it again on its own, e.g. `BiocManager::install("ANCOMBC")`, and read the error message carefully. The most common causes are an outdated R version and, on Linux, missing system libraries.
 
 :::::::::::::::::::::::::::::::::::::::::::::::
 
@@ -135,7 +145,9 @@ FIXME: update the link to the data once setup is finalised
 HOW WILL THE OUTPUT FROM DAY1 GET DOWNLOADED?
 -->
 
-**Please download the data required for this workshop:**
+If you are attending **in person**, the data are already on the workshop's RStudio server, in `/data/workshop_data`, and you can skip this step.
+
+If you are following **remotely**, please download the data required for this workshop. In [Community analysis](../episodes/03-community-analysis.Rmd), you will then set `data_dir <- "data"` to read it from your project.
 
 1. Create a new folder for the workshop, e.g. `metagenomics_day2` on your Desktop.
 2. Download the data and unzip it into that folder. You should now have a `data/` folder inside `metagenomics_day2`.
@@ -145,7 +157,7 @@ On Day 1 you ran **nf-core/taxprofiler** on a subset of 100,000 read pairs per s
 
 You do **not** need to re-run the Day 1 pipelines. We provide the processed tables so that everyone starts Day 2 from the same point.
 
-The `data/` folder contains one species-level table per profiler, with the same layout (`taxonomy_id`, `name`, one column per sample):
+The `/data/workshop_data/day2_ep3/` folder contains one species-level table per profiler, with the same layout (`taxonomy_id`, `name`, one column per sample):
 
 | File | Description |
 |---|---|

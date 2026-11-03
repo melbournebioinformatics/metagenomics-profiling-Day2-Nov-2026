@@ -57,7 +57,7 @@ library(ggplot2)
 
 ::::::::::::::::::::::::::::::::::::::::::::::::
 
-The `data/` folder holds one table per profiler, two ground-truth tables and the sample metadata. All the profiler tables have the same layout: a `taxonomy_id` column, a `name` column, and one column per sample.
+The `/data/workshop_data/day2_ep3/` folder holds one table per profiler, two ground-truth tables and the sample metadata. All the profiler tables have the same layout: a `taxonomy_id` column, a `name` column, and one column per sample.
 
 | File | Profiler and database | Taxonomy | Values |
 |---|---|---|---|
@@ -73,21 +73,32 @@ The `data/` folder holds one table per profiler, two ground-truth tables and the
 
 These tables were made from the per-sample output files of nf-core/taxprofiler. To make the same tables from your own pipeline results, see [From pipeline output to analysis tables](../learners/pipeline-to-tables.md).
 
+The `data_dir` line in the next chunk sets the folder the data are read from. If you are following the workshop remotely, set it to the `data/` folder of your project instead: `data_dir <- "data"`.
+
+
+``` r
+data_dir <- "/data/workshop_data/day2_ep3"
+```
+
+
+
 
 ``` r
 read_profile <- function(file) {
-  read_tsv(file, col_types = cols(taxonomy_id = col_character(), .default = col_guess()))
+  read_tsv(file, col_types = cols(taxonomy_id = col_character(),
+                                  .default = col_guess()))
 }
 
-metadata  <- read_tsv("data/metadata.tsv")
-truth_tax <- read_profile("data/truth_taxonomic.tsv")
-truth_seq <- read_profile("data/truth_sequence.tsv")
-metaphlan <- read_profile("data/metaphlan.tsv")
-motus     <- read_profile("data/motus.tsv")
-bracken   <- read_profile("data/bracken.tsv")
-sylph_tax <- read_profile("data/sylph_taxonomic.tsv")
-sylph_seq <- read_profile("data/sylph_sequence.tsv")
-gtdb_map  <- read_tsv("data/ncbi_to_gtdb_r220.tsv", col_types = cols(.default = "c"))
+metadata  <- read_tsv(file.path(data_dir, "metadata.tsv"))
+truth_tax <- read_profile(file.path(data_dir, "truth_taxonomic.tsv"))
+truth_seq <- read_profile(file.path(data_dir, "truth_sequence.tsv"))
+metaphlan <- read_profile(file.path(data_dir, "metaphlan.tsv"))
+motus     <- read_profile(file.path(data_dir, "motus.tsv"))
+bracken   <- read_profile(file.path(data_dir, "bracken.tsv"))
+sylph_tax <- read_profile(file.path(data_dir, "sylph_taxonomic.tsv"))
+sylph_seq <- read_profile(file.path(data_dir, "sylph_sequence.tsv"))
+gtdb_map  <- read_tsv(file.path(data_dir, "ncbi_to_gtdb_r220.tsv"),
+                      col_types = cols(.default = "c"))
 
 samples <- metadata$sample_id
 metadata
@@ -95,13 +106,13 @@ metadata
 
 ``` output
 # A tibble: 5 × 6
-  sample_id   community           n_species_truth read_pairs_raw read_pairs_qc
-  <chr>       <chr>                         <dbl>          <dbl>         <dbl>
-1 Gut_sample1 simulated human gut              67        9992084       9991772
-2 Gut_sample2 simulated human gut              76        9996732       9996176
-3 Gut_sample3 simulated human gut              56        9995889       9995356
-4 Gut_sample4 simulated human gut              67        9991243       9990455
-5 Gut_sample5 simulated human gut              64        9995965       9995479
+  sample_id   community   n_species_truth read_pairs_raw read_pairs_qc
+  <chr>       <chr>                 <dbl>          <dbl>         <dbl>
+1 Gut_sample1 simulated …              67        9992084       9991772
+2 Gut_sample2 simulated …              76        9996732       9996176
+3 Gut_sample3 simulated …              56        9995889       9995356
+4 Gut_sample4 simulated …              67        9991243       9990455
+5 Gut_sample5 simulated …              64        9995965       9995479
 # ℹ 1 more variable: kraken2_unclassified_pct <dbl>
 ```
 
@@ -230,8 +241,8 @@ The same organism can have a different name in each table. Here is NCBI taxonomy
 
 
 ``` r
-bind_rows(truth = truth_tax, MetaPhlAn = metaphlan, mOTUs = motus, Bracken = bracken,
-          .id = "source") |>
+bind_rows(truth = truth_tax, MetaPhlAn = metaphlan, mOTUs = motus,
+          Bracken = bracken, .id = "source") |>
   filter(taxonomy_id == "33038") |>
   select(source, taxonomy_id, name)
 ```
@@ -252,9 +263,9 @@ filter(sylph_tax, grepl("gnavus", name)) |> select(name, gtdb_lineage)
 
 ``` output
 # A tibble: 1 × 2
-  name                  gtdb_lineage                                            
-  <chr>                 <chr>                                                   
-1 Ruminococcus_B gnavus d__Bacteria;p__Bacillota_A;c__Clostridia;o__Lachnospira…
+  name                  gtdb_lineage                                  
+  <chr>                 <chr>                                         
+1 Ruminococcus_B gnavus d__Bacteria;p__Bacillota_A;c__Clostridia;o__L…
 ```
 
 The NCBI-based tools use the names of their own NCBI taxonomy versions: *[Ruminococcus] gnavus* (2021, mOTUs), *Ruminococcus gnavus* (MetaPhlAn) and *Mediterraneibacter gnavus* (2026, Kraken2). The taxonomy ID stays the same, so we compare the NCBI-based tools by **taxonomy ID**, not by name. sylph uses GTDB R220, where the species is *Ruminococcus_B gnavus* in the phylum *Bacillota_A*, and there is no taxonomy ID to join on.
@@ -270,24 +281,25 @@ head(gtdb_map)
 
 ``` output
 # A tibble: 6 × 6
-  taxonomy_id ncbi_name    sun2021_name gtdb_r220_species gtdb_r220_species_by…¹
-  <chr>       <chr>        <chr>        <chr>             <chr>                 
-1 187327      Acidaminoco… Acidaminoco… Acidaminococcus … Acidaminococcus intes…
-2 446660      Adlercreutz… Adlercreutz… Adlercreutzia eq… Adlercreutzia equolif…
-3 732         Aggregatiba… Aggregatiba… Aggregatibacter … Aggregatibacter aphro…
-4 239935      Akkermansia… Akkermansia… Akkermansia muci… Akkermansia muciniphi…
-5 214856      Alistipes f… Alistipes_f… Alistipes finego… Alistipes finegoldii  
-6 328814      Alistipes s… Alistipes_s… Alistipes shahii  Alistipes shahii      
-# ℹ abbreviated name: ¹​gtdb_r220_species_by_name
-# ℹ 1 more variable: evidence <chr>
+  taxonomy_id ncbi_name                 sun2021_name gtdb_r220_species
+  <chr>       <chr>                     <chr>        <chr>            
+1 187327      Acidaminococcus intestini Acidaminoco… Acidaminococcus …
+2 446660      Adlercreutzia equolifaci… Adlercreutz… Adlercreutzia eq…
+3 732         Aggregatibacter aphrophi… Aggregatiba… Aggregatibacter …
+4 239935      Akkermansia muciniphila   Akkermansia… Akkermansia muci…
+5 214856      Alistipes finegoldii      Alistipes_f… Alistipes finego…
+6 328814      Alistipes shahii          Alistipes_s… Alistipes shahii 
+# ℹ 2 more variables: gtdb_r220_species_by_name <chr>, evidence <chr>
 ```
 
 Species without an NCBI equivalent keep their GTDB name as their ID:
 
 
 ``` r
-add_ncbi_id <- function(sylph_table, gtdb_column = "gtdb_r220_species") {
-  lookup <- select(gtdb_map, ncbi_id = taxonomy_id, gtdb = all_of(gtdb_column))
+add_ncbi_id <- function(sylph_table,
+                        gtdb_column = "gtdb_r220_species") {
+  lookup <- select(gtdb_map, ncbi_id = taxonomy_id,
+                   gtdb = all_of(gtdb_column))
   sylph_table |>
     left_join(lookup, by = c("name" = "gtdb")) |>
     mutate(taxonomy_id = coalesce(ncbi_id, taxonomy_id)) |>
@@ -298,7 +310,8 @@ sylph_tax_ncbi <- add_ncbi_id(sylph_tax)
 sylph_seq_ncbi <- add_ncbi_id(sylph_seq)
 
 # sylph species that did not map to an NCBI taxonomy ID
-filter(sylph_tax_ncbi, !grepl("^[0-9]+$", taxonomy_id)) |> select(taxonomy_id, name)
+filter(sylph_tax_ncbi, !grepl("^[0-9]+$", taxonomy_id)) |>
+  select(taxonomy_id, name)
 ```
 
 ``` output
@@ -330,20 +343,21 @@ filter(gtdb_map, gtdb_r220_species != gtdb_r220_species_by_name) |>
 
 ``` output
 # A tibble: 12 × 3
-   ncbi_name                    gtdb_r220_species_by_name    gtdb_r220_species  
-   <chr>                        <chr>                        <chr>              
- 1 Clostridium botulinum        Clostridium_F botulinum      Clostridium cagae  
- 2 Desulfovibrio piger          Desulfovibrio piger          Desulfovibrio pige…
- 3 Faecalibacterium prausnitzii Faecalibacterium prausnitzii Faecalibacterium d…
- 4 Finegoldia magna             Finegoldia magna             Finegoldia magna_H 
- 5 Fusobacterium nucleatum      Fusobacterium nucleatum      Fusobacterium anim…
- 6 Fusobacterium periodonticum  Fusobacterium periodonticum  Fusobacterium peri…
- 7 Gardnerella vaginalis        Bifidobacterium vaginale     Bifidobacterium sw…
- 8 Isoptericola variabilis      Pauljensenia variabilis      Isoptericola varia…
- 9 Oxalobacter formigenes       Oxalobacter formigenes       Oxalobacter parafo…
-10 Peptoniphilus harei          Peptoniphilus_A harei        Peptoniphilus_A ha…
-11 Rothia mucilaginosa          Rothia mucilaginosa          Rothia sp001808955 
-12 Streptococcus cristatus      Streptococcus cristatus      Streptococcus cris…
+   ncbi_name                  gtdb_r220_species_by…¹ gtdb_r220_species
+   <chr>                      <chr>                  <chr>            
+ 1 Clostridium botulinum      Clostridium_F botulin… Clostridium cagae
+ 2 Desulfovibrio piger        Desulfovibrio piger    Desulfovibrio pi…
+ 3 Faecalibacterium prausnit… Faecalibacterium prau… Faecalibacterium…
+ 4 Finegoldia magna           Finegoldia magna       Finegoldia magna…
+ 5 Fusobacterium nucleatum    Fusobacterium nucleat… Fusobacterium an…
+ 6 Fusobacterium periodontic… Fusobacterium periodo… Fusobacterium pe…
+ 7 Gardnerella vaginalis      Bifidobacterium vagin… Bifidobacterium …
+ 8 Isoptericola variabilis    Pauljensenia variabil… Isoptericola var…
+ 9 Oxalobacter formigenes     Oxalobacter formigenes Oxalobacter para…
+10 Peptoniphilus harei        Peptoniphilus_A harei  Peptoniphilus_A …
+11 Rothia mucilaginosa        Rothia mucilaginosa    Rothia sp0018089…
+12 Streptococcus cristatus    Streptococcus cristat… Streptococcus cr…
+# ℹ abbreviated name: ¹​gtdb_r220_species_by_name
 ```
 
 ``` r
@@ -376,8 +390,9 @@ We now put the truth and all profiler outputs into one object. Each column is on
 
 
 ``` r
-methods <- c("Truth (taxonomic)", "Truth (sequence)", "MetaPhlAn", "mOTUs", "Bracken",
-             "sylph (taxonomic)", "sylph (sequence)")
+methods <- c("Truth (taxonomic)", "Truth (sequence)", "MetaPhlAn",
+             "mOTUs", "Bracken", "sylph (taxonomic)",
+             "sylph (sequence)")
 
 profiles <- bind_rows(
   "Truth (taxonomic)" = truth_tax,
@@ -389,7 +404,8 @@ profiles <- bind_rows(
   "sylph (sequence)"  = sylph_seq_ncbi,
   .id = "method") |>
   select(method, taxonomy_id, name, all_of(samples)) |>
-  pivot_longer(all_of(samples), names_to = "sample_id", values_to = "value") |>
+  pivot_longer(all_of(samples), names_to = "sample_id",
+               values_to = "value") |>
   group_by(method, sample_id) |>
   mutate(relabundance = value / sum(value)) |>
   ungroup() |>
@@ -400,18 +416,18 @@ profiles
 
 ``` output
 # A tibble: 8,435 × 7
-   method            taxonomy_id name      sample_id   value relabundance column
-   <chr>             <chr>       <chr>     <chr>       <dbl>        <dbl> <chr> 
- 1 Truth (taxonomic) 29391       Gemella … Gut_samp… 0.176        0.176   Gut_s…
- 2 Truth (taxonomic) 29391       Gemella … Gut_samp… 0.00874      0.00874 Gut_s…
- 3 Truth (taxonomic) 29391       Gemella … Gut_samp… 0.0540       0.0540  Gut_s…
- 4 Truth (taxonomic) 29391       Gemella … Gut_samp… 0.00774      0.00774 Gut_s…
- 5 Truth (taxonomic) 29391       Gemella … Gut_samp… 0            0       Gut_s…
- 6 Truth (taxonomic) 1680        Bifidoba… Gut_samp… 0.0194       0.0194  Gut_s…
- 7 Truth (taxonomic) 1680        Bifidoba… Gut_samp… 0.0278       0.0278  Gut_s…
- 8 Truth (taxonomic) 1680        Bifidoba… Gut_samp… 0.0130       0.0130  Gut_s…
- 9 Truth (taxonomic) 1680        Bifidoba… Gut_samp… 0.00250      0.00250 Gut_s…
-10 Truth (taxonomic) 1680        Bifidoba… Gut_samp… 0.167        0.167   Gut_s…
+   method      taxonomy_id name  sample_id   value relabundance column
+   <chr>       <chr>       <chr> <chr>       <dbl>        <dbl> <chr> 
+ 1 Truth (tax… 29391       Geme… Gut_samp… 0.176        0.176   Gut_s…
+ 2 Truth (tax… 29391       Geme… Gut_samp… 0.00874      0.00874 Gut_s…
+ 3 Truth (tax… 29391       Geme… Gut_samp… 0.0540       0.0540  Gut_s…
+ 4 Truth (tax… 29391       Geme… Gut_samp… 0.00774      0.00774 Gut_s…
+ 5 Truth (tax… 29391       Geme… Gut_samp… 0            0       Gut_s…
+ 6 Truth (tax… 1680        Bifi… Gut_samp… 0.0194       0.0194  Gut_s…
+ 7 Truth (tax… 1680        Bifi… Gut_samp… 0.0278       0.0278  Gut_s…
+ 8 Truth (tax… 1680        Bifi… Gut_samp… 0.0130       0.0130  Gut_s…
+ 9 Truth (tax… 1680        Bifi… Gut_samp… 0.00250      0.00250 Gut_s…
+10 Truth (tax… 1680        Bifi… Gut_samp… 0.167        0.167   Gut_s…
 # ℹ 8,425 more rows
 ```
 
@@ -422,7 +438,8 @@ Next, build the three parts of the object: the abundance matrix (`assay`), the c
 # abundance matrix: taxa x (sample | method)
 wide <- profiles |>
   select(taxonomy_id, column, relabundance) |>
-  pivot_wider(names_from = column, values_from = relabundance, values_fill = 0)
+  pivot_wider(names_from = column, values_from = relabundance,
+              values_fill = 0)
 abundance <- as.matrix(select(wide, -taxonomy_id))
 rownames(abundance) <- wide$taxonomy_id
 
@@ -431,9 +448,11 @@ col_info <- profiles |>
   distinct(column, sample_id, method) |>
   mutate(method = factor(method, levels = methods),
          profiler = sub(" \\(.*", "", method),
-         abundance_type = ifelse(grepl("sequence", method) | method == "Bracken",
+         abundance_type = ifelse(grepl("sequence", method) |
+                                   method == "Bracken",
                                  "sequence", "taxonomic"),
-         taxonomy = ifelse(grepl("sylph", method), "GTDB R220", "NCBI")) |>
+         taxonomy = ifelse(grepl("sylph", method),
+                           "GTDB R220", "NCBI")) |>
   as.data.frame()
 rownames(col_info) <- col_info$column
 
@@ -441,7 +460,8 @@ rownames(col_info) <- col_info$column
 row_info <- profiles |>
   arrange(!grepl("Truth", method)) |>
   distinct(taxonomy_id, .keep_all = TRUE) |>
-  transmute(taxonomy_id, name, in_truth = taxonomy_id %in% truth_tax$taxonomy_id) |>
+  transmute(taxonomy_id, name,
+            in_truth = taxonomy_id %in% truth_tax$taxonomy_id) |>
   as.data.frame()
 rownames(row_info) <- row_info$taxonomy_id
 ```
@@ -461,11 +481,12 @@ class: TreeSummarizedExperiment
 dim: 1101 35 
 metadata(0):
 assays(1): relabundance
-rownames(1101): 29391 1680 ... 45497 Bifidobacterium sp959020155
+rownames(1101): 29391 1680 ... 45497 Bifidobacterium
+  sp959020155
 rowData names(3): taxonomy_id name in_truth
-colnames(35): Gut_sample1 | Truth (taxonomic) Gut_sample2 | Truth
-  (taxonomic) ... Gut_sample4 | sylph (sequence) Gut_sample5 | sylph
-  (sequence)
+colnames(35): Gut_sample1 | Truth (taxonomic) Gut_sample2 |
+  Truth (taxonomic) ... Gut_sample4 | sylph (sequence)
+  Gut_sample5 | sylph (sequence)
 colData names(6): column sample_id ... abundance_type taxonomy
 reducedDimNames(0):
 mainExpName: NULL
@@ -501,10 +522,13 @@ The ground truth gives both abundance types for the same community. If all genom
 
 ``` r
 truth_long <- truth_tax |>
-  pivot_longer(all_of(samples), names_to = "sample_id", values_to = "taxonomic") |>
-  inner_join(pivot_longer(truth_seq, all_of(samples), names_to = "sample_id",
+  pivot_longer(all_of(samples), names_to = "sample_id",
+               values_to = "taxonomic") |>
+  inner_join(pivot_longer(truth_seq, all_of(samples),
+                          names_to = "sample_id",
                           values_to = "sequence"),
-             by = c("taxonomy_id", "name", "gtdb_r220_species", "sample_id")) |>
+             by = c("taxonomy_id", "name", "gtdb_r220_species",
+                    "sample_id")) |>
   filter(taxonomic > 0)
 
 ggplot(truth_long, aes(taxonomic, sequence)) +
@@ -572,7 +596,8 @@ rclr <- function(x) {
 }
 
 distance_to_truth <- function(x, truth) {
-  c(`Bray-Curtis` = as.numeric(vegdist(rbind(x, truth), method = "bray")),
+  c(`Bray-Curtis` = as.numeric(vegdist(rbind(x, truth),
+                                        method = "bray")),
     L1   = sum(abs(x - truth)),
     L2   = sqrt(sum((x - truth)^2)),
     rJSD = rjsd(x, truth),
@@ -593,14 +618,17 @@ ab <- assay(tse, "relabundance")
 ``` r
 comparisons <- expand_grid(sample_id = samples,
                            method = methods[-(1:2)],
-                           truth = c("Truth (taxonomic)", "Truth (sequence)"))
+                           truth = c("Truth (taxonomic)",
+                                     "Truth (sequence)"))
 
 distances <- comparisons |>
   rowwise() |>
-  mutate(d = list(distance_to_truth(ab[, paste(sample_id, method, sep = " | ")],
-                                    ab[, paste(sample_id, truth, sep = " | ")]))) |>
+  mutate(d = list(distance_to_truth(
+    ab[, paste(sample_id, method, sep = " | ")],
+    ab[, paste(sample_id, truth, sep = " | ")]))) |>
   unnest_wider(d) |>
-  pivot_longer(`Bray-Curtis`:rAD, names_to = "measure", values_to = "distance")
+  pivot_longer(`Bray-Curtis`:rAD, names_to = "measure",
+               values_to = "distance")
 
 ggplot(distances, aes(method, distance, fill = truth)) +
   geom_boxplot() +
@@ -617,7 +645,8 @@ ggplot(distances, aes(method, distance, fill = truth)) +
 distances |>
   filter(measure == "Bray-Curtis") |>
   group_by(method, truth) |>
-  summarise(mean_bray_curtis = round(mean(distance), 3), .groups = "drop") |>
+  summarise(mean_bray_curtis = round(mean(distance), 3),
+            .groups = "drop") |>
   pivot_wider(names_from = truth, values_from = mean_bray_curtis)
 ```
 
@@ -668,7 +697,8 @@ Both truth tables contain the same species, so this part does not depend on abun
 
 ``` r
 truth_presence <- truth_tax |>
-  pivot_longer(all_of(samples), names_to = "sample_id", values_to = "abundance") |>
+  pivot_longer(all_of(samples), names_to = "sample_id",
+               values_to = "abundance") |>
   filter(abundance > 0) |>
   select(sample_id, taxonomy_id)
 
@@ -682,10 +712,12 @@ pr <- expand_grid(method = methods[-(1:2)], sample_id = samples,
                   threshold = c(0, 0.0001, 0.001)) |>
   rowwise() |>
   mutate(
-    found = list(detection$taxonomy_id[detection$method == method &
-                                       detection$sample_id == sample_id &
-                                       detection$threshold == threshold]),
-    true  = list(truth_presence$taxonomy_id[truth_presence$sample_id == sample_id]),
+    found = list(detection$taxonomy_id[
+      detection$method == method &
+        detection$sample_id == sample_id &
+        detection$threshold == threshold]),
+    true  = list(truth_presence$taxonomy_id[
+      truth_presence$sample_id == sample_id]),
     TP = length(intersect(found, true)),
     FP = length(setdiff(found, true)),
     FN = length(setdiff(true, found))) |>
@@ -696,36 +728,38 @@ pr <- expand_grid(method = methods[-(1:2)], sample_id = samples,
 
 pr |>
   group_by(method, threshold) |>
-  summarise(across(c(TP, FP, FN, precision, recall, F1), \(x) round(mean(x), 2)),
+  summarise(across(c(TP, FP, FN, precision, recall, F1),
+                   \(x) round(mean(x), 2)),
             .groups = "drop")
 ```
 
 ``` output
 # A tibble: 15 × 8
-   method            threshold    TP    FP    FN precision recall    F1
-   <chr>                 <dbl> <dbl> <dbl> <dbl>     <dbl>  <dbl> <dbl>
- 1 Bracken              0       65.2 505     0.8      0.11   0.99  0.21
- 2 Bracken              0.0001  63.6  28.2   2.4      0.69   0.96  0.81
- 3 Bracken              0.001   60.8   4.8   5.2      0.93   0.92  0.92
- 4 MetaPhlAn            0       65     9.8   1        0.87   0.99  0.92
- 5 MetaPhlAn            0.0001  64.4   2.8   1.6      0.96   0.98  0.97
- 6 MetaPhlAn            0.001   62.4   1.2   3.6      0.98   0.95  0.96
- 7 mOTUs                0       66     6.4   0        0.91   1     0.96
- 8 mOTUs                0.0001  66     6.4   0        0.91   1     0.96
- 9 mOTUs                0.001   65     2     1        0.97   0.99  0.98
-10 sylph (sequence)     0       66     0.2   0        1      1     1   
-11 sylph (sequence)     0.0001  66     0.2   0        1      1     1   
-12 sylph (sequence)     0.001   65.2   0.2   0.8      1      0.99  0.99
-13 sylph (taxonomic)    0       66     0.2   0        1      1     1   
-14 sylph (taxonomic)    0.0001  66     0.2   0        1      1     1   
-15 sylph (taxonomic)    0.001   65.2   0.2   0.8      1      0.99  0.99
+   method           threshold    TP    FP    FN precision recall    F1
+   <chr>                <dbl> <dbl> <dbl> <dbl>     <dbl>  <dbl> <dbl>
+ 1 Bracken             0       65.2 505     0.8      0.11   0.99  0.21
+ 2 Bracken             0.0001  63.6  28.2   2.4      0.69   0.96  0.81
+ 3 Bracken             0.001   60.8   4.8   5.2      0.93   0.92  0.92
+ 4 MetaPhlAn           0       65     9.8   1        0.87   0.99  0.92
+ 5 MetaPhlAn           0.0001  64.4   2.8   1.6      0.96   0.98  0.97
+ 6 MetaPhlAn           0.001   62.4   1.2   3.6      0.98   0.95  0.96
+ 7 mOTUs               0       66     6.4   0        0.91   1     0.96
+ 8 mOTUs               0.0001  66     6.4   0        0.91   1     0.96
+ 9 mOTUs               0.001   65     2     1        0.97   0.99  0.98
+10 sylph (sequence)    0       66     0.2   0        1      1     1   
+11 sylph (sequence)    0.0001  66     0.2   0        1      1     1   
+12 sylph (sequence)    0.001   65.2   0.2   0.8      1      0.99  0.99
+13 sylph (taxonomi…    0       66     0.2   0        1      1     1   
+14 sylph (taxonomi…    0.0001  66     0.2   0        1      1     1   
+15 sylph (taxonomi…    0.001   65.2   0.2   0.8      1      0.99  0.99
 ```
 
 
 ``` r
 pr |>
   pivot_longer(c(precision, recall, F1), names_to = "score") |>
-  mutate(threshold = factor(paste0(threshold * 100, "%"), levels = c("0%", "0.01%", "0.1%"))) |>
+  mutate(threshold = factor(paste0(threshold * 100, "%"),
+                            levels = c("0%", "0.01%", "0.1%"))) |>
   ggplot(aes(threshold, value, colour = method, group = method)) +
   stat_summary(fun = mean, geom = "line") +
   stat_summary(fun = mean, geom = "point") +
@@ -767,7 +801,8 @@ tse <- addAlpha(tse, assay.type = "relabundance",
 
 as.data.frame(colData(tse)) |>
   group_by(method) |>
-  summarise(across(c(observed, shannon, inverse_simpson), \(x) round(mean(x), 2)))
+  summarise(across(c(observed, shannon, inverse_simpson),
+                   \(x) round(mean(x), 2)))
 ```
 
 
@@ -786,7 +821,8 @@ as.data.frame(colData(tse)) |>
 
 
 ``` r
-plotColData(tse, x = "method", y = "observed", colour_by = "sample_id") +
+plotColData(tse, x = "method", y = "observed",
+            colour_by = "sample_id") +
   scale_y_log10() +
   labs(x = NULL, y = "Observed richness (log scale)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
@@ -810,8 +846,8 @@ shannon_truth <- as.data.frame(colData(tse)) |>
   pivot_wider(names_from = method, values_from = shannon)
 shannon_truth
 
-wilcox.test(shannon_truth$`Truth (taxonomic)`, shannon_truth$`Truth (sequence)`,
-            paired = TRUE)
+wilcox.test(shannon_truth$`Truth (taxonomic)`,
+            shannon_truth$`Truth (sequence)`, paired = TRUE)
 ```
 
 
@@ -827,7 +863,8 @@ wilcox.test(shannon_truth$`Truth (taxonomic)`, shannon_truth$`Truth (sequence)`,
 
 	Wilcoxon signed rank exact test
 
-data:  shannon_truth$`Truth (taxonomic)` and shannon_truth$`Truth (sequence)`
+data: shannon_truth$`Truth (taxonomic)` and shannon_truth$`Truth
+    (sequence)`
 V = 6, p-value = 0.8125
 alternative hypothesis: true location shift is not equal to 0
 ```
@@ -846,11 +883,13 @@ Apply the 0.1% threshold to the abundance matrix, recalculate observed richness,
 ``` r
 assay(tse, "filtered") <- ifelse(assay(tse, "relabundance") > 0.001,
                                  assay(tse, "relabundance"), 0)
-tse <- addAlpha(tse, assay.type = "filtered", index = "observed", name = "observed_filtered")
+tse <- addAlpha(tse, assay.type = "filtered", index = "observed",
+                name = "observed_filtered")
 
 as.data.frame(colData(tse)) |>
   group_by(method) |>
-  summarise(observed = mean(observed), observed_filtered = mean(observed_filtered))
+  summarise(observed = mean(observed),
+            observed_filtered = mean(observed_filtered))
 ```
 
 
@@ -880,9 +919,11 @@ Beta diversity compares samples with each other. We calculate Bray–Curtis diss
 
 ``` r
 tse <- addMDS(tse, FUN = getDissimilarity, method = "bray",
-              assay.type = "relabundance", name = "PCoA_BC", ncomponents = 2)
+              assay.type = "relabundance", name = "PCoA_BC",
+              ncomponents = 2)
 
-plotReducedDim(tse, "PCoA_BC", colour_by = "method", shape_by = "sample_id", point_size = 3)
+plotReducedDim(tse, "PCoA_BC", colour_by = "method",
+               shape_by = "sample_id", point_size = 3)
 ```
 
 <img src="fig/03-pcoa-1.png" alt="PCoA of Bray-Curtis dissimilarities, coloured by method and shaped by sample" style="display: block; margin: auto;" />
@@ -893,11 +934,13 @@ How much of the variation does each factor explain? PERMANOVA (`vegan::adonis2()
 
 
 ``` r
-bray <- getDissimilarity(tse, method = "bray", assay.type = "relabundance")
+bray <- getDissimilarity(tse, method = "bray",
+                         assay.type = "relabundance")
 col_df <- as.data.frame(colData(tse))
 
 set.seed(2026)
-adonis2(bray ~ sample_id + method, data = col_df, by = "margin", permutations = 999)
+adonis2(bray ~ sample_id + method, data = col_df, by = "margin",
+        permutations = 999)
 ```
 
 
@@ -907,7 +950,8 @@ Marginal effects of terms
 Permutation: free
 Number of permutations: 999
 
-adonis2(formula = bray ~ sample_id + method, data = col_df, permutations = 999, by = "margin")
+adonis2(formula = bray ~ sample_id + method, data = col_df,
+    permutations = 999, by = "margin")
           Df SumOfSqs      R2       F Pr(>F)    
 sample_id  4   6.2966 0.95432 4889.64  0.001 ***
 method     6   0.2937 0.04451  152.03  0.001 ***
