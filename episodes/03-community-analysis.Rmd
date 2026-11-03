@@ -24,6 +24,8 @@ exercises: 25
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(message = FALSE, warning = FALSE, fig.width = 8, fig.height = 5)
+# Print output at most 70 characters wide, so tables fit the lesson page.
+options(width = 70)
 ```
 
 ```{r load-precomputed, include = FALSE, saved_output = TRUE}
@@ -31,7 +33,12 @@ knitr::opts_chunk$set(message = FALSE, warning = FALSE, fig.width = 8, fig.heigh
 # website but not run there; their output was made on a laptop by
 # scripts/precompute_ep03.R and is loaded here.
 load("data/ep03_precomputed.RData")
-show_output <- function(label) cat(precomputed$text[[label]], sep = "")
+show_output <- function(label) {
+  out <- unlist(strsplit(paste(precomputed$text[[label]], collapse = ""), "\n"))
+  out <- unlist(lapply(out, function(l)
+    if (nchar(l) > 70) strwrap(l, width = 70, exdent = 4) else l))
+  cat(out, sep = "\n")
+}
 ```
 
 ::::::::::::::::::::::::::::::::::::: instructor
@@ -71,7 +78,7 @@ library(ggplot2)
 
 ::::::::::::::::::::::::::::::::::::::::::::::::
 
-The `data/` folder holds one table per profiler, two ground-truth tables and the sample metadata. All the profiler tables have the same layout: a `taxonomy_id` column, a `name` column, and one column per sample.
+The `/data/workshop_data/day2_ep3/` folder holds one table per profiler, two ground-truth tables and the sample metadata. All the profiler tables have the same layout: a `taxonomy_id` column, a `name` column, and one column per sample.
 
 | File | Profiler and database | Taxonomy | Values |
 |---|---|---|---|
@@ -87,20 +94,34 @@ The `data/` folder holds one table per profiler, two ground-truth tables and the
 
 These tables were made from the per-sample output files of nf-core/taxprofiler. To make the same tables from your own pipeline results, see [From pipeline output to analysis tables](../learners/pipeline-to-tables.md).
 
+The `data_dir` line in the next chunk sets the folder the data are read from. If you are following the workshop remotely, set it to the `data/` folder of your project instead: `data_dir <- "data"`.
+
+```{r data-dir}
+data_dir <- "/data/workshop_data/day2_ep3"
+```
+
+```{r data-dir-site, include = FALSE}
+# Building the website (or the lesson on a laptop): the server folder does not
+# exist there, so use the copy of the data in the lesson's own data/ folder.
+if (!dir.exists(data_dir)) data_dir <- "data"
+```
+
 ```{r read-data}
 read_profile <- function(file) {
-  read_tsv(file, col_types = cols(taxonomy_id = col_character(), .default = col_guess()))
+  read_tsv(file, col_types = cols(taxonomy_id = col_character(),
+                                  .default = col_guess()))
 }
 
-metadata  <- read_tsv("data/metadata.tsv")
-truth_tax <- read_profile("data/truth_taxonomic.tsv")
-truth_seq <- read_profile("data/truth_sequence.tsv")
-metaphlan <- read_profile("data/metaphlan.tsv")
-motus     <- read_profile("data/motus.tsv")
-bracken   <- read_profile("data/bracken.tsv")
-sylph_tax <- read_profile("data/sylph_taxonomic.tsv")
-sylph_seq <- read_profile("data/sylph_sequence.tsv")
-gtdb_map  <- read_tsv("data/ncbi_to_gtdb_r220.tsv", col_types = cols(.default = "c"))
+metadata  <- read_tsv(file.path(data_dir, "metadata.tsv"))
+truth_tax <- read_profile(file.path(data_dir, "truth_taxonomic.tsv"))
+truth_seq <- read_profile(file.path(data_dir, "truth_sequence.tsv"))
+metaphlan <- read_profile(file.path(data_dir, "metaphlan.tsv"))
+motus     <- read_profile(file.path(data_dir, "motus.tsv"))
+bracken   <- read_profile(file.path(data_dir, "bracken.tsv"))
+sylph_tax <- read_profile(file.path(data_dir, "sylph_taxonomic.tsv"))
+sylph_seq <- read_profile(file.path(data_dir, "sylph_sequence.tsv"))
+gtdb_map  <- read_tsv(file.path(data_dir, "ncbi_to_gtdb_r220.tsv"),
+                      col_types = cols(.default = "c"))
 
 samples <- metadata$sample_id
 metadata
@@ -159,8 +180,8 @@ tail(bracken_s1)
 The same organism can have a different name in each table. Here is NCBI taxonomy ID 33038:
 
 ```{r gnavus}
-bind_rows(truth = truth_tax, MetaPhlAn = metaphlan, mOTUs = motus, Bracken = bracken,
-          .id = "source") |>
+bind_rows(truth = truth_tax, MetaPhlAn = metaphlan, mOTUs = motus,
+          Bracken = bracken, .id = "source") |>
   filter(taxonomy_id == "33038") |>
   select(source, taxonomy_id, name)
 
@@ -180,8 +201,10 @@ head(gtdb_map)
 Species without an NCBI equivalent keep their GTDB name as their ID:
 
 ```{r add-ncbi-id}
-add_ncbi_id <- function(sylph_table, gtdb_column = "gtdb_r220_species") {
-  lookup <- select(gtdb_map, ncbi_id = taxonomy_id, gtdb = all_of(gtdb_column))
+add_ncbi_id <- function(sylph_table,
+                        gtdb_column = "gtdb_r220_species") {
+  lookup <- select(gtdb_map, ncbi_id = taxonomy_id,
+                   gtdb = all_of(gtdb_column))
   sylph_table |>
     left_join(lookup, by = c("name" = "gtdb")) |>
     mutate(taxonomy_id = coalesce(ncbi_id, taxonomy_id)) |>
@@ -192,7 +215,8 @@ sylph_tax_ncbi <- add_ncbi_id(sylph_tax)
 sylph_seq_ncbi <- add_ncbi_id(sylph_seq)
 
 # sylph species that did not map to an NCBI taxonomy ID
-filter(sylph_tax_ncbi, !grepl("^[0-9]+$", taxonomy_id)) |> select(taxonomy_id, name)
+filter(sylph_tax_ncbi, !grepl("^[0-9]+$", taxonomy_id)) |>
+  select(taxonomy_id, name)
 ```
 
 All but one of sylph's species map to a truth species. The exception, *Bifidobacterium* sp959020155, is a false positive.
@@ -237,8 +261,9 @@ How `gtdb_r220_species` was checked: for each of the 12 split species, sylph rep
 We now put the truth and all profiler outputs into one object. Each column is one *sample × method* combination, and each row is one taxon. We drop mOTUs' `-1` row (reads from species missing from its database, about 0.1–0.3% here), and convert every column to relative abundance so that it sums to 1.
 
 ```{r combine}
-methods <- c("Truth (taxonomic)", "Truth (sequence)", "MetaPhlAn", "mOTUs", "Bracken",
-             "sylph (taxonomic)", "sylph (sequence)")
+methods <- c("Truth (taxonomic)", "Truth (sequence)", "MetaPhlAn",
+             "mOTUs", "Bracken", "sylph (taxonomic)",
+             "sylph (sequence)")
 
 profiles <- bind_rows(
   "Truth (taxonomic)" = truth_tax,
@@ -250,7 +275,8 @@ profiles <- bind_rows(
   "sylph (sequence)"  = sylph_seq_ncbi,
   .id = "method") |>
   select(method, taxonomy_id, name, all_of(samples)) |>
-  pivot_longer(all_of(samples), names_to = "sample_id", values_to = "value") |>
+  pivot_longer(all_of(samples), names_to = "sample_id",
+               values_to = "value") |>
   group_by(method, sample_id) |>
   mutate(relabundance = value / sum(value)) |>
   ungroup() |>
@@ -265,7 +291,8 @@ Next, build the three parts of the object: the abundance matrix (`assay`), the c
 # abundance matrix: taxa x (sample | method)
 wide <- profiles |>
   select(taxonomy_id, column, relabundance) |>
-  pivot_wider(names_from = column, values_from = relabundance, values_fill = 0)
+  pivot_wider(names_from = column, values_from = relabundance,
+              values_fill = 0)
 abundance <- as.matrix(select(wide, -taxonomy_id))
 rownames(abundance) <- wide$taxonomy_id
 
@@ -274,9 +301,11 @@ col_info <- profiles |>
   distinct(column, sample_id, method) |>
   mutate(method = factor(method, levels = methods),
          profiler = sub(" \\(.*", "", method),
-         abundance_type = ifelse(grepl("sequence", method) | method == "Bracken",
+         abundance_type = ifelse(grepl("sequence", method) |
+                                   method == "Bracken",
                                  "sequence", "taxonomic"),
-         taxonomy = ifelse(grepl("sylph", method), "GTDB R220", "NCBI")) |>
+         taxonomy = ifelse(grepl("sylph", method),
+                           "GTDB R220", "NCBI")) |>
   as.data.frame()
 rownames(col_info) <- col_info$column
 
@@ -284,7 +313,8 @@ rownames(col_info) <- col_info$column
 row_info <- profiles |>
   arrange(!grepl("Truth", method)) |>
   distinct(taxonomy_id, .keep_all = TRUE) |>
-  transmute(taxonomy_id, name, in_truth = taxonomy_id %in% truth_tax$taxonomy_id) |>
+  transmute(taxonomy_id, name,
+            in_truth = taxonomy_id %in% truth_tax$taxonomy_id) |>
   as.data.frame()
 rownames(row_info) <- row_info$taxonomy_id
 ```
@@ -315,10 +345,13 @@ The ground truth gives both abundance types for the same community. If all genom
 
 ```{r truth-types}
 truth_long <- truth_tax |>
-  pivot_longer(all_of(samples), names_to = "sample_id", values_to = "taxonomic") |>
-  inner_join(pivot_longer(truth_seq, all_of(samples), names_to = "sample_id",
+  pivot_longer(all_of(samples), names_to = "sample_id",
+               values_to = "taxonomic") |>
+  inner_join(pivot_longer(truth_seq, all_of(samples),
+                          names_to = "sample_id",
                           values_to = "sequence"),
-             by = c("taxonomy_id", "name", "gtdb_r220_species", "sample_id")) |>
+             by = c("taxonomy_id", "name", "gtdb_r220_species",
+                    "sample_id")) |>
   filter(taxonomic > 0)
 
 ggplot(truth_long, aes(taxonomic, sequence)) +
@@ -370,7 +403,8 @@ rclr <- function(x) {
 }
 
 distance_to_truth <- function(x, truth) {
-  c(`Bray-Curtis` = as.numeric(vegdist(rbind(x, truth), method = "bray")),
+  c(`Bray-Curtis` = as.numeric(vegdist(rbind(x, truth),
+                                        method = "bray")),
     L1   = sum(abs(x - truth)),
     L2   = sqrt(sum((x - truth)^2)),
     rJSD = rjsd(x, truth),
@@ -391,14 +425,17 @@ ab <- abundance  # the same matrix that assay(tse, "relabundance") returns
 ```{r distances}
 comparisons <- expand_grid(sample_id = samples,
                            method = methods[-(1:2)],
-                           truth = c("Truth (taxonomic)", "Truth (sequence)"))
+                           truth = c("Truth (taxonomic)",
+                                     "Truth (sequence)"))
 
 distances <- comparisons |>
   rowwise() |>
-  mutate(d = list(distance_to_truth(ab[, paste(sample_id, method, sep = " | ")],
-                                    ab[, paste(sample_id, truth, sep = " | ")]))) |>
+  mutate(d = list(distance_to_truth(
+    ab[, paste(sample_id, method, sep = " | ")],
+    ab[, paste(sample_id, truth, sep = " | ")]))) |>
   unnest_wider(d) |>
-  pivot_longer(`Bray-Curtis`:rAD, names_to = "measure", values_to = "distance")
+  pivot_longer(`Bray-Curtis`:rAD, names_to = "measure",
+               values_to = "distance")
 
 ggplot(distances, aes(method, distance, fill = truth)) +
   geom_boxplot() +
@@ -412,7 +449,8 @@ ggplot(distances, aes(method, distance, fill = truth)) +
 distances |>
   filter(measure == "Bray-Curtis") |>
   group_by(method, truth) |>
-  summarise(mean_bray_curtis = round(mean(distance), 3), .groups = "drop") |>
+  summarise(mean_bray_curtis = round(mean(distance), 3),
+            .groups = "drop") |>
   pivot_wider(names_from = truth, values_from = mean_bray_curtis)
 ```
 
@@ -451,7 +489,8 @@ Both truth tables contain the same species, so this part does not depend on abun
 
 ```{r precision-recall}
 truth_presence <- truth_tax |>
-  pivot_longer(all_of(samples), names_to = "sample_id", values_to = "abundance") |>
+  pivot_longer(all_of(samples), names_to = "sample_id",
+               values_to = "abundance") |>
   filter(abundance > 0) |>
   select(sample_id, taxonomy_id)
 
@@ -465,10 +504,12 @@ pr <- expand_grid(method = methods[-(1:2)], sample_id = samples,
                   threshold = c(0, 0.0001, 0.001)) |>
   rowwise() |>
   mutate(
-    found = list(detection$taxonomy_id[detection$method == method &
-                                       detection$sample_id == sample_id &
-                                       detection$threshold == threshold]),
-    true  = list(truth_presence$taxonomy_id[truth_presence$sample_id == sample_id]),
+    found = list(detection$taxonomy_id[
+      detection$method == method &
+        detection$sample_id == sample_id &
+        detection$threshold == threshold]),
+    true  = list(truth_presence$taxonomy_id[
+      truth_presence$sample_id == sample_id]),
     TP = length(intersect(found, true)),
     FP = length(setdiff(found, true)),
     FN = length(setdiff(true, found))) |>
@@ -479,14 +520,16 @@ pr <- expand_grid(method = methods[-(1:2)], sample_id = samples,
 
 pr |>
   group_by(method, threshold) |>
-  summarise(across(c(TP, FP, FN, precision, recall, F1), \(x) round(mean(x), 2)),
+  summarise(across(c(TP, FP, FN, precision, recall, F1),
+                   \(x) round(mean(x), 2)),
             .groups = "drop")
 ```
 
 ```{r precision-recall-plot}
 pr |>
   pivot_longer(c(precision, recall, F1), names_to = "score") |>
-  mutate(threshold = factor(paste0(threshold * 100, "%"), levels = c("0%", "0.01%", "0.1%"))) |>
+  mutate(threshold = factor(paste0(threshold * 100, "%"),
+                            levels = c("0%", "0.01%", "0.1%"))) |>
   ggplot(aes(threshold, value, colour = method, group = method)) +
   stat_summary(fun = mean, geom = "line") +
   stat_summary(fun = mean, geom = "point") +
@@ -525,7 +568,8 @@ tse <- addAlpha(tse, assay.type = "relabundance",
 
 as.data.frame(colData(tse)) |>
   group_by(method) |>
-  summarise(across(c(observed, shannon, inverse_simpson), \(x) round(mean(x), 2)))
+  summarise(across(c(observed, shannon, inverse_simpson),
+                   \(x) round(mean(x), 2)))
 ```
 
 ```{r alpha-out, echo = FALSE, saved_output = TRUE}
@@ -533,7 +577,8 @@ show_output("alpha")
 ```
 
 ```{r alpha-plot, eval = FALSE, heavy = TRUE}
-plotColData(tse, x = "method", y = "observed", colour_by = "sample_id") +
+plotColData(tse, x = "method", y = "observed",
+            colour_by = "sample_id") +
   scale_y_log10() +
   labs(x = NULL, y = "Observed richness (log scale)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
@@ -558,8 +603,8 @@ shannon_truth <- as.data.frame(colData(tse)) |>
   pivot_wider(names_from = method, values_from = shannon)
 shannon_truth
 
-wilcox.test(shannon_truth$`Truth (taxonomic)`, shannon_truth$`Truth (sequence)`,
-            paired = TRUE)
+wilcox.test(shannon_truth$`Truth (taxonomic)`,
+            shannon_truth$`Truth (sequence)`, paired = TRUE)
 ```
 
 ```{r alpha-test-out, echo = FALSE, saved_output = TRUE}
@@ -579,11 +624,13 @@ Apply the 0.1% threshold to the abundance matrix, recalculate observed richness,
 ```{r challenge-4, eval = FALSE, heavy = TRUE}
 assay(tse, "filtered") <- ifelse(assay(tse, "relabundance") > 0.001,
                                  assay(tse, "relabundance"), 0)
-tse <- addAlpha(tse, assay.type = "filtered", index = "observed", name = "observed_filtered")
+tse <- addAlpha(tse, assay.type = "filtered", index = "observed",
+                name = "observed_filtered")
 
 as.data.frame(colData(tse)) |>
   group_by(method) |>
-  summarise(observed = mean(observed), observed_filtered = mean(observed_filtered))
+  summarise(observed = mean(observed),
+            observed_filtered = mean(observed_filtered))
 ```
 
 ```{r challenge-4-out, echo = FALSE, saved_output = TRUE}
@@ -602,9 +649,11 @@ Beta diversity compares samples with each other. We calculate Bray–Curtis diss
 
 ```{r pcoa, eval = FALSE, heavy = TRUE}
 tse <- addMDS(tse, FUN = getDissimilarity, method = "bray",
-              assay.type = "relabundance", name = "PCoA_BC", ncomponents = 2)
+              assay.type = "relabundance", name = "PCoA_BC",
+              ncomponents = 2)
 
-plotReducedDim(tse, "PCoA_BC", colour_by = "method", shape_by = "sample_id", point_size = 3)
+plotReducedDim(tse, "PCoA_BC", colour_by = "method",
+               shape_by = "sample_id", point_size = 3)
 ```
 
 ```{r pcoa-out, echo = FALSE, saved_output = TRUE, dpi = 150, fig.alt = "PCoA of Bray-Curtis dissimilarities, coloured by method and shaped by sample"}
@@ -616,11 +665,13 @@ The points form five tight groups, one per sample: the samples differ much more 
 How much of the variation does each factor explain? PERMANOVA (`vegan::adonis2()`) partitions the dissimilarities between sample and method:
 
 ```{r permanova, eval = FALSE, heavy = TRUE}
-bray <- getDissimilarity(tse, method = "bray", assay.type = "relabundance")
+bray <- getDissimilarity(tse, method = "bray",
+                         assay.type = "relabundance")
 col_df <- as.data.frame(colData(tse))
 
 set.seed(2026)
-adonis2(bray ~ sample_id + method, data = col_df, by = "margin", permutations = 999)
+adonis2(bray ~ sample_id + method, data = col_df, by = "margin",
+        permutations = 999)
 ```
 
 ```{r permanova-out, echo = FALSE, saved_output = TRUE}
