@@ -352,7 +352,7 @@
         
 <section id="aio-01-recap"><p>Content from <a href="01-recap.html">Recap from Day 1</a></p>
 <hr>
-<p>Last updated on 2026-11-02 |
+<p>Last updated on 2026-11-03 |
 
         <a href="https://github.com/melbournebioinformatics/workbench-template-rmd/edit/main/episodes/01-recap.Rmd" class="external-link">Edit this page <i aria-hidden="true" data-feather="edit"></i></a></p>
 <div class="text-end">
@@ -410,7 +410,7 @@ abundance tables:</p>
 <tr>
 <td>1. Data</td>
 <td>Downloaded paired-end FASTQ files and sample metadata</td>
-<td>ENA browser, <code>wget</code>, MD5 check</td>
+<td>Figshare, <code>wget</code>, MD5 check</td>
 <td>Raw reads, <code>metadata.tsv</code>
 </td>
 </tr>
@@ -426,8 +426,9 @@ command</td>
 </tr>
 <tr>
 <td>3. Pre-processing</td>
-<td>Read QC, adapter trimming, host-read removal</td>
-<td>nf-core/taxprofiler (fastp, Bowtie2, …)</td>
+<td>Read QC and adapter trimming. Host-read removal was switched off,
+because the reads are simulated and contain no human DNA</td>
+<td>nf-core/taxprofiler (FastQC, fastp)</td>
 <td>MultiQC report</td>
 </tr>
 <tr>
@@ -439,7 +440,7 @@ command</td>
 <tr>
 <td>5. Standardisation</td>
 <td>Profiles were converted to a common format and merged</td>
-<td>Taxpasta</td>
+<td>Taxpasta (MetaPhlAn, mOTUs, Kraken2/Bracken), sylph-tax (sylph)</td>
 <td>One merged table per profiler</td>
 </tr>
 <tr>
@@ -456,15 +457,47 @@ command</td>
 <!-- FIXME: replace with a workflow figure (e.g. episodes/fig/workflow.png) shared with the Day 1 lesson --></section><section><h2 class="section-heading" id="the-dataset">The dataset<a class="anchor" aria-label="anchor" href="#the-dataset"></a>
 </h2>
 <hr class="half-width">
-<p>We are using samples from the benchmarking study by Sun <em>et
-al.</em> (2021), <a href="https://doi.org/10.1038/s41592-021-01141-3" class="external-link"><em>Challenges in
-benchmarking metagenomic profilers</em></a>. These are mock and
-simulated communities, so we know the <strong>true</strong> composition
-of each sample. On Day 1, we used the a subset of the original data as
-input for the pipelines, which does not reflect the complete taxonomic
-and functional profiles of the samples. Therefore, we also provide you
-with the outputs from the full metagen</p>
-<!-- FIXME: add the number of samples, community types and sequencing depth once the subset is fixed -->
+<p>We are using the five simulated human gut metagenomes from the
+benchmarking study by Sun <em>et al.</em> (2021), <a href="https://doi.org/10.1038/s41592-021-01141-3" class="external-link"><em>Challenges in
+benchmarking metagenomic profilers</em></a>. The reads were simulated
+from known genomes in known proportions, so we know the
+<strong>true</strong> composition of each sample.</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<tbody>
+<tr>
+<td>Samples</td>
+<td>5 (<code>Gut_sample1</code> to <code>Gut_sample5</code>)</td>
+</tr>
+<tr>
+<td>Species</td>
+<td>95 in total, 56–76 per sample</td>
+</tr>
+<tr>
+<td>Reads</td>
+<td>about 10 million read pairs per sample, Illumina 2 × 150 bp</td>
+</tr>
+<tr>
+<td>Ground truth</td>
+<td>taxonomic abundance (fraction of cells) and sequence abundance
+(fraction of reads) for every species</td>
+</tr>
+</tbody>
+</table>
+<p>To avoid favouring one profiler, Sun <em>et al.</em> only used
+species present in the reference databases of MetaPhlAn, mOTUs and
+Kraken2 at the time. The community is therefore a benchmark rather than
+a realistic gut: it includes oral, vaginal and skin species, and lacks
+some typical gut dominants.</p>
+<p>On Day 1, you ran the pipeline on a random subset of 100,000 read
+pairs per sample, so that it finishes within the session. A profile from
+1–2% of the reads misses many low-abundance species. Today we analyse
+the profiles from the <strong>full</strong> samples, produced with the
+same pipeline (nf-core/taxprofiler 2.0.1), the same profilers and the
+same databases.</p>
 </section><section><h2 class="section-heading" id="what-we-do-today">What we do today<a class="anchor" aria-label="anchor" href="#what-we-do-today"></a>
 </h2>
 <hr class="half-width">
@@ -503,11 +536,12 @@ species present, their abundances, or both?</p>
 <div class="callout-content">
 <ul>
 <li>nf-core/taxprofiler ran four profilers on the same reads, and
-Taxpasta standardised their outputs into comparable tables.</li>
+Taxpasta and sylph-tax standardised their outputs into comparable
+tables.</li>
 <li>Our samples have a known composition (the ground truth), so we can
 judge how accurate each profiler is.</li>
-<li>Today’s analysis starts from the merged Taxpasta tables and the
-sample metadata.</li>
+<li>Today’s analysis uses the profiles of the full samples, not the
+subset from Day 1.</li>
 </ul>
 </div>
 </div>
@@ -518,7 +552,7 @@ any links that you are not going to use.
  -->
 </section></section><section id="aio-02-profilers-concepts"><p>Content from <a href="02-profilers-concepts.html">Comparing taxonomic profilers: concepts</a></p>
 <hr>
-<p>Last updated on 2026-11-02 |
+<p>Last updated on 2026-11-03 |
 
         <a href="https://github.com/melbournebioinformatics/workbench-template-rmd/edit/main/episodes/02-profilers-concepts.Rmd" class="external-link">Edit this page <i aria-hidden="true" data-feather="edit"></i></a></p>
 <div class="text-end">
@@ -626,9 +660,24 @@ within <em>Escherichia coli</em>, and genera are split with suffixes
 such as <code>Clostridium_A</code>
 </td>
 </tr>
+<tr>
+<td>Updates</td>
+<td>Continuously; each tool uses the snapshot from when its database was
+built</td>
+<td>Numbered releases, about once a year. The sylph database used in
+this workshop is <strong>GTDB R220</strong> (April 2024)</td>
+</tr>
 </tbody>
 </table>
-<!-- FIXME: double-check the examples and add the GTDB release used by the workshop's sylph database --><div id="names-are-not-interchangeable" class="callout">
+<p>In the Sun et al data, the same <em>Clostridium perfringens</em>
+genome is called <em>Sarcina perfringens</em> by GTDB, and
+<em>[Ruminococcus] gnavus</em> is <em>Ruminococcus_B gnavus</em>. The
+differences reach the top of the tree too. For <code>Gut_sample1</code>,
+MetaPhlAn (NCBI) puts 66.9% of the community in the phylum Firmicutes,
+while sylph (GTDB R220) splits the same species across four phyla:
+<em>Bacillota</em> (32.7%), <em>Bacillota_A</em> (26.9%),
+<em>Bacillota_C</em> (5.8%) and <em>Bacillota_I</em> (2.5%).</p>
+<div id="names-are-not-interchangeable" class="callout">
 <div class="callout-square">
 <i class="callout-icon" data-feather="bell"></i>
 </div>
@@ -640,7 +689,12 @@ such as <code>Clostridium_A</code>
 detect the same organism under <strong>different names</strong>. Before
 comparing the profilers’ outputs, we have to map them to a common
 taxonomy. Otherwise a correct detection looks like a false positive plus
-a false negative.</p>
+a false negative. Even within NCBI, names change between versions while
+the <strong>taxonomy ID</strong> stays the same. In our data, taxonomy
+ID 33038 is <em>[Ruminococcus] gnavus</em> for mOTUs, <em>Ruminococcus
+gnavus</em> for MetaPhlAn and <em>Mediterraneibacter gnavus</em> for
+Kraken2. Therefore, taxonomy matching should be done using taxonomy IDs,
+not names.</p>
 </div>
 </div>
 </div>
@@ -687,7 +741,7 @@ what is each species’ taxonomic abundance and sequence abundance?</p>
 <button class="accordion-button solution-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSolution1" aria-expanded="false" aria-controls="collapseSolution1">
   <h4 class="accordion-header" id="headingSolution1"> Show me the solution </h4>
 </button>
-<div id="collapseSolution1" class="accordion-collapse collapse" data-bs-parent="#accordionSolution1" aria-labelledby="headingSolution1">
+<div id="collapseSolution1" class="accordion-collapse collapse" aria-labelledby="headingSolution1" data-bs-parent="#accordionSolution1">
 <div class="accordion-body">
 <p>Taxonomic abundance: A = 50%, B = 50%.</p>
 <p>Sequence abundance: B contributes three times as many bases per cell
@@ -713,6 +767,12 @@ be found. A lower containment ANI suggests a related strain or species
 rather than the reference itself. At low sequencing depth, many k-mers
 are missed simply by chance. sylph corrects for this and reports an
 <strong>adjusted ANI</strong>.</p>
+<p>In our data, most genomes sylph detected have an adjusted ANI above
+99.5%: the reads came from that genome, or one almost identical to it.
+<em>Gemella morbillorum</em> in <code>Gut_sample1</code>, for example,
+has 99.98%. <em>Ruminococcus_B gnavus</em> has 97.1%: the simulated
+strain is a different strain of the same species as the GTDB reference
+genome.</p>
 </section><section><h2 class="section-heading" id="the-four-profilers">The four profilers<a class="anchor" aria-label="anchor" href="#the-four-profilers"></a>
 </h2>
 <hr class="half-width">
@@ -775,9 +835,32 @@ species not in the database</td>
 <td>Reads stay unclassified, or are assigned to a higher rank</td>
 <td>Genomes below the ANI threshold are not reported</td>
 </tr>
+<tr>
+<td><strong>In this workshop</strong></td>
+<td>MetaPhlAn 4.1.1,
+<code>mpa_<wbr>vJun23_<wbr>CHOCOPhlAnSGB_<wbr>202403</wbr></wbr></wbr></code>
+</td>
+<td>mOTUs 3.1.0, run with read counts (<code>-c</code>)</td>
+<td>Kraken2 2.1.5 + Bracken 3.0.1, Standard-8 database
+<code>k2_<wbr>standard_<wbr>08_<wbr>GB_<wbr>20260626</wbr></wbr></wbr></wbr></code> (capped at 8
+GB)</td>
+<td>sylph 0.7.0 + sylph-tax 1.2.0, GTDB R220 (<code>c200</code>)</td>
+</tr>
+<tr>
+<td><strong>Values in our tables</strong></td>
+<td>Taxonomic abundance (%)</td>
+<td>Marker-gene read counts
+(<code>insert.<wbr>scaled_<wbr>counts</wbr></wbr></code>)</td>
+<td>Reads per species (<code>new_<wbr>est_<wbr>reads</wbr></wbr></code>)</td>
+<td>Taxonomic and sequence abundance (%)</td>
+</tr>
 </tbody>
 </table>
-<!-- FIXME: confirm tool/database versions used on Day 1 and which abundance column Taxpasta keeps for each profiler --><div class="section level3">
+<p>All four ran inside nf-core/taxprofiler 2.0.1. Taxpasta 0.7.0
+standardised the MetaPhlAn, mOTUs and Kraken2/Bracken outputs. Taxpasta
+does not support sylph, so the pipeline merges sylph’s output with
+sylph-tax instead.</p>
+<div class="section level3">
 <h3 id="pros-and-cons">Pros and cons<a class="anchor" aria-label="anchor" href="#pros-and-cons"></a>
 </h3>
 <ul>
@@ -795,7 +878,8 @@ its MAG-derived markers. Only covers prokaryotes.</li>
 viruses and eukaryotes, and its read counts suit count-based statistics.
 Prone to false positives, especially with small or incomplete databases,
 so it often needs abundance or read-count filtering. Its abundance is
-sequence abundance.</li>
+sequence abundance. With the capped Standard-8 database used here, about
+a quarter of the reads stay unclassified.</li>
 <li>
 <strong>sylph:</strong> very fast, accurate at species level,
 reports both abundance types, and its ANI output helps tell strains
@@ -830,7 +914,7 @@ estimates.</li>
 <button class="accordion-button solution-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSolution2" aria-expanded="false" aria-controls="collapseSolution2">
   <h4 class="accordion-header" id="headingSolution2"> Show me the solution </h4>
 </button>
-<div id="collapseSolution2" class="accordion-collapse collapse" data-bs-parent="#accordionSolution2" aria-labelledby="headingSolution2">
+<div id="collapseSolution2" class="accordion-collapse collapse" aria-labelledby="headingSolution2" data-bs-parent="#accordionSolution2">
 <div class="accordion-body">
 <ol style="list-style-type: decimal">
 <li>
@@ -887,7 +971,7 @@ affect the results.</li>
 <li>Sequence abundance (fraction of reads) and taxonomic abundance
 (fraction of cells) differ systematically because genome sizes
 differ.</li>
-<li>Containment ANI estimates how much of a reference genome in
+<li>Containment ANI estimates how much of a reference genome is
 “contained” in the sample.</li>
 <li>Choose the profiler and abundance type that match your research
 question, and use agreement between tools as supporting evidence.</li>
@@ -901,7 +985,7 @@ any links that you are not going to use.
  -->
 </section></section><section id="aio-03-community-analysis"><p>Content from <a href="03-community-analysis.html">Community analysis and comparing taxonomic profilers: practice</a></p>
 <hr>
-<p>Last updated on 2026-11-02 |
+<p>Last updated on 2026-11-03 |
 
         <a href="https://github.com/melbournebioinformatics/workbench-template-rmd/edit/main/episodes/03-community-analysis.Rmd" class="external-link">Edit this page <i aria-hidden="true" data-feather="edit"></i></a></p>
 <div class="text-end">
@@ -979,10 +1063,10 @@ call a specific version with <code>dplyr::left_join()</code>.</p>
 </div>
 </div>
 </div>
-<p>The <code>data/</code> folder holds one table per profiler, two
-ground-truth tables and the sample metadata. All the profiler tables
-have the same layout: a <code>taxonomy_id</code> column, a
-<code>name</code> column, and one column per sample.</p>
+<p>The <code>/data/workshop_data/day2_ep3/</code> folder holds one table
+per profiler, two ground-truth tables and the sample metadata. All the
+profiler tables have the same layout: a <code>taxonomy_id</code> column,
+a <code>name</code> column, and one column per sample.</p>
 <table class="table">
 <colgroup>
 <col width="25%">
@@ -1059,23 +1143,35 @@ own identifier.</p>
 nf-core/taxprofiler. To make the same tables from your own pipeline
 results, see <a href="pipeline-to-tables.html">From pipeline output to
 analysis tables</a>.</p>
+<p>The <code>data_dir</code> line in the next chunk sets the folder the
+data are read from. If you are following the workshop remotely, set it
+to the <code>data/</code> folder of your project instead:
+<code>data_dir &lt;- "data"</code>.</p>
 <div class="codewrapper sourceCode" id="cb2">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">data_dir</span> <span class="op">&lt;-</span> <span class="st">"/data/workshop_data/day2_ep3"</span></span></code></pre>
+</div>
+<div class="codewrapper sourceCode" id="cb3">
+<h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
+</h3>
+<pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">read_profile</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">file</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="fu">read_tsv</span><span class="op">(</span><span class="va">file</span>, col_types <span class="op">=</span> <span class="fu">cols</span><span class="op">(</span>taxonomy_id <span class="op">=</span> <span class="fu">col_character</span><span class="op">(</span><span class="op">)</span>, .default <span class="op">=</span> <span class="fu">col_guess</span><span class="op">(</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="fu">read_tsv</span><span class="op">(</span><span class="va">file</span>, col_types <span class="op">=</span> <span class="fu">cols</span><span class="op">(</span>taxonomy_id <span class="op">=</span> <span class="fu">col_character</span><span class="op">(</span><span class="op">)</span>,</span>
+<span>                                  .default <span class="op">=</span> <span class="fu">col_guess</span><span class="op">(</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span></span>
-<span><span class="va">metadata</span>  <span class="op">&lt;-</span> <span class="fu">read_tsv</span><span class="op">(</span><span class="st">"data/metadata.tsv"</span><span class="op">)</span></span>
-<span><span class="va">truth_tax</span> <span class="op">&lt;-</span> <span class="fu">read_profile</span><span class="op">(</span><span class="st">"data/truth_taxonomic.tsv"</span><span class="op">)</span></span>
-<span><span class="va">truth_seq</span> <span class="op">&lt;-</span> <span class="fu">read_profile</span><span class="op">(</span><span class="st">"data/truth_sequence.tsv"</span><span class="op">)</span></span>
-<span><span class="va">metaphlan</span> <span class="op">&lt;-</span> <span class="fu">read_profile</span><span class="op">(</span><span class="st">"data/metaphlan.tsv"</span><span class="op">)</span></span>
-<span><span class="va">motus</span>     <span class="op">&lt;-</span> <span class="fu">read_profile</span><span class="op">(</span><span class="st">"data/motus.tsv"</span><span class="op">)</span></span>
-<span><span class="va">bracken</span>   <span class="op">&lt;-</span> <span class="fu">read_profile</span><span class="op">(</span><span class="st">"data/bracken.tsv"</span><span class="op">)</span></span>
-<span><span class="va">sylph_tax</span> <span class="op">&lt;-</span> <span class="fu">read_profile</span><span class="op">(</span><span class="st">"data/sylph_taxonomic.tsv"</span><span class="op">)</span></span>
-<span><span class="va">sylph_seq</span> <span class="op">&lt;-</span> <span class="fu">read_profile</span><span class="op">(</span><span class="st">"data/sylph_sequence.tsv"</span><span class="op">)</span></span>
-<span><span class="va">gtdb_map</span>  <span class="op">&lt;-</span> <span class="fu">read_tsv</span><span class="op">(</span><span class="st">"data/ncbi_to_gtdb_r220.tsv"</span>, col_types <span class="op">=</span> <span class="fu">cols</span><span class="op">(</span>.default <span class="op">=</span> <span class="st">"c"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">metadata</span>  <span class="op">&lt;-</span> <span class="fu">read_tsv</span><span class="op">(</span><span class="fu">file.path</span><span class="op">(</span><span class="va">data_dir</span>, <span class="st">"metadata.tsv"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">truth_tax</span> <span class="op">&lt;-</span> <span class="fu">read_profile</span><span class="op">(</span><span class="fu">file.path</span><span class="op">(</span><span class="va">data_dir</span>, <span class="st">"truth_taxonomic.tsv"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">truth_seq</span> <span class="op">&lt;-</span> <span class="fu">read_profile</span><span class="op">(</span><span class="fu">file.path</span><span class="op">(</span><span class="va">data_dir</span>, <span class="st">"truth_sequence.tsv"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">metaphlan</span> <span class="op">&lt;-</span> <span class="fu">read_profile</span><span class="op">(</span><span class="fu">file.path</span><span class="op">(</span><span class="va">data_dir</span>, <span class="st">"metaphlan.tsv"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">motus</span>     <span class="op">&lt;-</span> <span class="fu">read_profile</span><span class="op">(</span><span class="fu">file.path</span><span class="op">(</span><span class="va">data_dir</span>, <span class="st">"motus.tsv"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">bracken</span>   <span class="op">&lt;-</span> <span class="fu">read_profile</span><span class="op">(</span><span class="fu">file.path</span><span class="op">(</span><span class="va">data_dir</span>, <span class="st">"bracken.tsv"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">sylph_tax</span> <span class="op">&lt;-</span> <span class="fu">read_profile</span><span class="op">(</span><span class="fu">file.path</span><span class="op">(</span><span class="va">data_dir</span>, <span class="st">"sylph_taxonomic.tsv"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">sylph_seq</span> <span class="op">&lt;-</span> <span class="fu">read_profile</span><span class="op">(</span><span class="fu">file.path</span><span class="op">(</span><span class="va">data_dir</span>, <span class="st">"sylph_sequence.tsv"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">gtdb_map</span>  <span class="op">&lt;-</span> <span class="fu">read_tsv</span><span class="op">(</span><span class="fu">file.path</span><span class="op">(</span><span class="va">data_dir</span>, <span class="st">"ncbi_to_gtdb_r220.tsv"</span><span class="op">)</span>,</span>
+<span>                      col_types <span class="op">=</span> <span class="fu">cols</span><span class="op">(</span>.default <span class="op">=</span> <span class="st">"c"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">samples</span> <span class="op">&lt;-</span> <span class="va">metadata</span><span class="op">$</span><span class="va">sample_id</span></span>
 <span><span class="va">metadata</span></span></code></pre>
@@ -1084,13 +1180,13 @@ analysis tables</a>.</p>
 <h3 class="code-label">OUTPUT<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="output" tabindex="0"><code># A tibble: 5 × 6
-  sample_id   community           n_species_truth read_pairs_raw read_pairs_qc
-  &lt;chr&gt;       &lt;chr&gt;                         &lt;dbl&gt;          &lt;dbl&gt;         &lt;dbl&gt;
-1 Gut_sample1 simulated human gut              67        9992084       9991772
-2 Gut_sample2 simulated human gut              76        9996732       9996176
-3 Gut_sample3 simulated human gut              56        9995889       9995356
-4 Gut_sample4 simulated human gut              67        9991243       9990455
-5 Gut_sample5 simulated human gut              64        9995965       9995479
+  sample_id   community   n_species_truth read_pairs_raw read_pairs_qc
+  &lt;chr&gt;       &lt;chr&gt;                 &lt;dbl&gt;          &lt;dbl&gt;         &lt;dbl&gt;
+1 Gut_sample1 simulated …              67        9992084       9991772
+2 Gut_sample2 simulated …              76        9996732       9996176
+3 Gut_sample3 simulated …              56        9995889       9995356
+4 Gut_sample4 simulated …              67        9991243       9990455
+5 Gut_sample5 simulated …              64        9995965       9995479
 # ℹ 1 more variable: kraken2_unclassified_pct &lt;dbl&gt;</code></pre>
 </div>
 </section><section><h2 class="section-heading" id="a-first-look-at-the-outputs">A first look at the outputs<a class="anchor" aria-label="anchor" href="#a-first-look-at-the-outputs"></a>
@@ -1098,7 +1194,7 @@ analysis tables</a>.</p>
 <hr class="half-width">
 <p>Each profiler reports in its own units. Let’s add up each table’s
 columns:</p>
-<div class="codewrapper sourceCode" id="cb4">
+<div class="codewrapper sourceCode" id="cb5">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
@@ -1122,7 +1218,7 @@ while mOTUs counts reads mapped to its 10 marker genes, which is why its
 totals are so much smaller. Before comparing anything, we will convert
 all of them to relative abundances.</p>
 <p>How many species does each tool report in each sample?</p>
-<div class="codewrapper sourceCode" id="cb6">
+<div class="codewrapper sourceCode" id="cb7">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
@@ -1166,9 +1262,9 @@ How abundant are the species there?</li>
 <button class="accordion-button solution-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSolution1" aria-expanded="false" aria-controls="collapseSolution1">
   <h4 class="accordion-header" id="headingSolution1"> Show me the solution </h4>
 </button>
-<div id="collapseSolution1" class="accordion-collapse collapse" data-bs-parent="#accordionSolution1" aria-labelledby="headingSolution1">
+<div id="collapseSolution1" class="accordion-collapse collapse" aria-labelledby="headingSolution1" data-bs-parent="#accordionSolution1">
 <div class="accordion-body">
-<div class="codewrapper sourceCode" id="cb8">
+<div class="codewrapper sourceCode" id="cb9">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
@@ -1179,7 +1275,7 @@ How abundant are the species there?</li>
 </h3>
 <pre class="output" tabindex="0"><code>[1] 23.47 22.65 21.06 25.88 23.12</code></pre>
 </div>
-<div class="codewrapper sourceCode" id="cb10">
+<div class="codewrapper sourceCode" id="cb11">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
@@ -1194,7 +1290,7 @@ How abundant are the species there?</li>
 </h3>
 <pre class="output" tabindex="0"><code>[1] 534</code></pre>
 </div>
-<div class="codewrapper sourceCode" id="cb12">
+<div class="codewrapper sourceCode" id="cb13">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
@@ -1223,7 +1319,7 @@ How abundant are the species there?</li>
 15 Streptococcus sp. FDAARGOS_521                   2041
 16 Clostridium taeniosporum                         1604</code></pre>
 </div>
-<div class="codewrapper sourceCode" id="cb14">
+<div class="codewrapper sourceCode" id="cb15">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
@@ -1262,12 +1358,12 @@ usually filtered by abundance or read count.</li>
 <hr class="half-width">
 <p>The same organism can have a different name in each table. Here is
 NCBI taxonomy ID 33038:</p>
-<div class="codewrapper sourceCode" id="cb16">
+<div class="codewrapper sourceCode" id="cb17">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">bind_rows</span><span class="op">(</span>truth <span class="op">=</span> <span class="va">truth_tax</span>, MetaPhlAn <span class="op">=</span> <span class="va">metaphlan</span>, mOTUs <span class="op">=</span> <span class="va">motus</span>, Bracken <span class="op">=</span> <span class="va">bracken</span>,</span>
-<span>          .id <span class="op">=</span> <span class="st">"source"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<code class="sourceCode R"><span><span class="fu">bind_rows</span><span class="op">(</span>truth <span class="op">=</span> <span class="va">truth_tax</span>, MetaPhlAn <span class="op">=</span> <span class="va">metaphlan</span>, mOTUs <span class="op">=</span> <span class="va">motus</span>,</span>
+<span>          Bracken <span class="op">=</span> <span class="va">bracken</span>, .id <span class="op">=</span> <span class="st">"source"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">filter</span><span class="op">(</span><span class="va">taxonomy_id</span> <span class="op">==</span> <span class="st">"33038"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">select</span><span class="op">(</span><span class="va">source</span>, <span class="va">taxonomy_id</span>, <span class="va">name</span><span class="op">)</span></span></code></pre>
 </div>
@@ -1282,7 +1378,7 @@ NCBI taxonomy ID 33038:</p>
 3 mOTUs     33038       [Ruminococcus] gnavus
 4 Bracken   33038       Mediterraneibacter gnavus</code></pre>
 </div>
-<div class="codewrapper sourceCode" id="cb18">
+<div class="codewrapper sourceCode" id="cb19">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
@@ -1294,7 +1390,7 @@ NCBI taxonomy ID 33038:</p>
 <pre class="output" tabindex="0"><code># A tibble: 1 × 2
   name                  gtdb_lineage
   &lt;chr&gt;                 &lt;chr&gt;
-1 Ruminococcus_B gnavus d__Bacteria;p__Bacillota_A;c__Clostridia;o__Lachnospira…</code></pre>
+1 Ruminococcus_B gnavus d__Bacteria;p__Bacillota_A;c__Clostridia;o__L…</code></pre>
 </div>
 <p>The NCBI-based tools use the names of their own NCBI taxonomy
 versions: <em>[Ruminococcus] gnavus</em> (2021, mOTUs), <em>Ruminococcus
@@ -1309,7 +1405,7 @@ R220, where the species is <em>Ruminococcus_B gnavus</em> in the phylum
 <p>To put sylph in the same table as the others, we translate its GTDB
 species to NCBI taxonomy IDs with
 <code>ncbi_to_gtdb_r220.tsv</code>:</p>
-<div class="codewrapper sourceCode" id="cb20">
+<div class="codewrapper sourceCode" id="cb21">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
@@ -1319,25 +1415,26 @@ species to NCBI taxonomy IDs with
 <h3 class="code-label">OUTPUT<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="output" tabindex="0"><code># A tibble: 6 × 6
-  taxonomy_id ncbi_name    sun2021_name gtdb_r220_species gtdb_r220_species_by…¹
-  &lt;chr&gt;       &lt;chr&gt;        &lt;chr&gt;        &lt;chr&gt;             &lt;chr&gt;
-1 187327      Acidaminoco… Acidaminoco… Acidaminococcus … Acidaminococcus intes…
-2 446660      Adlercreutz… Adlercreutz… Adlercreutzia eq… Adlercreutzia equolif…
-3 732         Aggregatiba… Aggregatiba… Aggregatibacter … Aggregatibacter aphro…
-4 239935      Akkermansia… Akkermansia… Akkermansia muci… Akkermansia muciniphi…
-5 214856      Alistipes f… Alistipes_f… Alistipes finego… Alistipes finegoldii
-6 328814      Alistipes s… Alistipes_s… Alistipes shahii  Alistipes shahii
-# ℹ abbreviated name: ¹​gtdb_r220_species_by_name
-# ℹ 1 more variable: evidence &lt;chr&gt;</code></pre>
+  taxonomy_id ncbi_name                 sun2021_name gtdb_r220_species
+  &lt;chr&gt;       &lt;chr&gt;                     &lt;chr&gt;        &lt;chr&gt;
+1 187327      Acidaminococcus intestini Acidaminoco… Acidaminococcus …
+2 446660      Adlercreutzia equolifaci… Adlercreutz… Adlercreutzia eq…
+3 732         Aggregatibacter aphrophi… Aggregatiba… Aggregatibacter …
+4 239935      Akkermansia muciniphila   Akkermansia… Akkermansia muci…
+5 214856      Alistipes finegoldii      Alistipes_f… Alistipes finego…
+6 328814      Alistipes shahii          Alistipes_s… Alistipes shahii
+# ℹ 2 more variables: gtdb_r220_species_by_name &lt;chr&gt;, evidence &lt;chr&gt;</code></pre>
 </div>
 <p>Species without an NCBI equivalent keep their GTDB name as their
 ID:</p>
-<div class="codewrapper sourceCode" id="cb22">
+<div class="codewrapper sourceCode" id="cb23">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">add_ncbi_id</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">sylph_table</span>, <span class="va">gtdb_column</span> <span class="op">=</span> <span class="st">"gtdb_r220_species"</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="va">lookup</span> <span class="op">&lt;-</span> <span class="fu">select</span><span class="op">(</span><span class="va">gtdb_map</span>, ncbi_id <span class="op">=</span> <span class="va">taxonomy_id</span>, gtdb <span class="op">=</span> <span class="fu">all_of</span><span class="op">(</span><span class="va">gtdb_column</span><span class="op">)</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">add_ncbi_id</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">sylph_table</span>,</span>
+<span>                        <span class="va">gtdb_column</span> <span class="op">=</span> <span class="st">"gtdb_r220_species"</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">lookup</span> <span class="op">&lt;-</span> <span class="fu">select</span><span class="op">(</span><span class="va">gtdb_map</span>, ncbi_id <span class="op">=</span> <span class="va">taxonomy_id</span>,</span>
+<span>                   gtdb <span class="op">=</span> <span class="fu">all_of</span><span class="op">(</span><span class="va">gtdb_column</span><span class="op">)</span><span class="op">)</span></span>
 <span>  <span class="va">sylph_table</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu">left_join</span><span class="op">(</span><span class="va">lookup</span>, by <span class="op">=</span> <span class="fu">c</span><span class="op">(</span><span class="st">"name"</span> <span class="op">=</span> <span class="st">"gtdb"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu">mutate</span><span class="op">(</span>taxonomy_id <span class="op">=</span> <span class="fu">coalesce</span><span class="op">(</span><span class="va">ncbi_id</span>, <span class="va">taxonomy_id</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -1348,7 +1445,8 @@ ID:</p>
 <span><span class="va">sylph_seq_ncbi</span> <span class="op">&lt;-</span> <span class="fu">add_ncbi_id</span><span class="op">(</span><span class="va">sylph_seq</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># sylph species that did not map to an NCBI taxonomy ID</span></span>
-<span><span class="fu">filter</span><span class="op">(</span><span class="va">sylph_tax_ncbi</span>, <span class="op">!</span><span class="fu">grepl</span><span class="op">(</span><span class="st">"^[0-9]+$"</span>, <span class="va">taxonomy_id</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu">select</span><span class="op">(</span><span class="va">taxonomy_id</span>, <span class="va">name</span><span class="op">)</span></span></code></pre>
+<span><span class="fu">filter</span><span class="op">(</span><span class="va">sylph_tax_ncbi</span>, <span class="op">!</span><span class="fu">grepl</span><span class="op">(</span><span class="st">"^[0-9]+$"</span>, <span class="va">taxonomy_id</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">select</span><span class="op">(</span><span class="va">taxonomy_id</span>, <span class="va">name</span><span class="op">)</span></span></code></pre>
 </div>
 <div class="codewrapper">
 <h3 class="code-label">OUTPUT<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
@@ -1388,9 +1486,9 @@ species now fail to map?</li>
 <button class="accordion-button solution-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSolution2" aria-expanded="false" aria-controls="collapseSolution2">
   <h4 class="accordion-header" id="headingSolution2"> Show me the solution </h4>
 </button>
-<div id="collapseSolution2" class="accordion-collapse collapse" data-bs-parent="#accordionSolution2" aria-labelledby="headingSolution2">
+<div id="collapseSolution2" class="accordion-collapse collapse" aria-labelledby="headingSolution2" data-bs-parent="#accordionSolution2">
 <div class="accordion-body">
-<div class="codewrapper sourceCode" id="cb24">
+<div class="codewrapper sourceCode" id="cb25">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
@@ -1401,22 +1499,23 @@ species now fail to map?</li>
 <h3 class="code-label">OUTPUT<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="output" tabindex="0"><code># A tibble: 12 × 3
-   ncbi_name                    gtdb_r220_species_by_name    gtdb_r220_species
-   &lt;chr&gt;                        &lt;chr&gt;                        &lt;chr&gt;
- 1 Clostridium botulinum        Clostridium_F botulinum      Clostridium cagae
- 2 Desulfovibrio piger          Desulfovibrio piger          Desulfovibrio pige…
- 3 Faecalibacterium prausnitzii Faecalibacterium prausnitzii Faecalibacterium d…
- 4 Finegoldia magna             Finegoldia magna             Finegoldia magna_H
- 5 Fusobacterium nucleatum      Fusobacterium nucleatum      Fusobacterium anim…
- 6 Fusobacterium periodonticum  Fusobacterium periodonticum  Fusobacterium peri…
- 7 Gardnerella vaginalis        Bifidobacterium vaginale     Bifidobacterium sw…
- 8 Isoptericola variabilis      Pauljensenia variabilis      Isoptericola varia…
- 9 Oxalobacter formigenes       Oxalobacter formigenes       Oxalobacter parafo…
-10 Peptoniphilus harei          Peptoniphilus_A harei        Peptoniphilus_A ha…
-11 Rothia mucilaginosa          Rothia mucilaginosa          Rothia sp001808955
-12 Streptococcus cristatus      Streptococcus cristatus      Streptococcus cris…</code></pre>
+   ncbi_name                  gtdb_r220_species_by…¹ gtdb_r220_species
+   &lt;chr&gt;                      &lt;chr&gt;                  &lt;chr&gt;
+ 1 Clostridium botulinum      Clostridium_F botulin… Clostridium cagae
+ 2 Desulfovibrio piger        Desulfovibrio piger    Desulfovibrio pi…
+ 3 Faecalibacterium prausnit… Faecalibacterium prau… Faecalibacterium…
+ 4 Finegoldia magna           Finegoldia magna       Finegoldia magna…
+ 5 Fusobacterium nucleatum    Fusobacterium nucleat… Fusobacterium an…
+ 6 Fusobacterium periodontic… Fusobacterium periodo… Fusobacterium pe…
+ 7 Gardnerella vaginalis      Bifidobacterium vagin… Bifidobacterium …
+ 8 Isoptericola variabilis    Pauljensenia variabil… Isoptericola var…
+ 9 Oxalobacter formigenes     Oxalobacter formigenes Oxalobacter para…
+10 Peptoniphilus harei        Peptoniphilus_A harei  Peptoniphilus_A …
+11 Rothia mucilaginosa        Rothia mucilaginosa    Rothia sp0018089…
+12 Streptococcus cristatus    Streptococcus cristat… Streptococcus cr…
+# ℹ abbreviated name: ¹​gtdb_r220_species_by_name</code></pre>
 </div>
-<div class="codewrapper sourceCode" id="cb26">
+<div class="codewrapper sourceCode" id="cb27">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
@@ -1455,12 +1554,13 @@ column is one <em>sample × method</em> combination, and each row is one
 taxon. We drop mOTUs’ <code>-1</code> row (reads from species missing
 from its database, about 0.1–0.3% here), and convert every column to
 relative abundance so that it sums to 1.</p>
-<div class="codewrapper sourceCode" id="cb28">
+<div class="codewrapper sourceCode" id="cb29">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">methods</span> <span class="op">&lt;-</span> <span class="fu">c</span><span class="op">(</span><span class="st">"Truth (taxonomic)"</span>, <span class="st">"Truth (sequence)"</span>, <span class="st">"MetaPhlAn"</span>, <span class="st">"mOTUs"</span>, <span class="st">"Bracken"</span>,</span>
-<span>             <span class="st">"sylph (taxonomic)"</span>, <span class="st">"sylph (sequence)"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">methods</span> <span class="op">&lt;-</span> <span class="fu">c</span><span class="op">(</span><span class="st">"Truth (taxonomic)"</span>, <span class="st">"Truth (sequence)"</span>, <span class="st">"MetaPhlAn"</span>,</span>
+<span>             <span class="st">"mOTUs"</span>, <span class="st">"Bracken"</span>, <span class="st">"sylph (taxonomic)"</span>,</span>
+<span>             <span class="st">"sylph (sequence)"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">profiles</span> <span class="op">&lt;-</span> <span class="fu">bind_rows</span><span class="op">(</span></span>
 <span>  <span class="st">"Truth (taxonomic)"</span> <span class="op">=</span> <span class="va">truth_tax</span>,</span>
@@ -1472,7 +1572,8 @@ relative abundance so that it sums to 1.</p>
 <span>  <span class="st">"sylph (sequence)"</span>  <span class="op">=</span> <span class="va">sylph_seq_ncbi</span>,</span>
 <span>  .id <span class="op">=</span> <span class="st">"method"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">select</span><span class="op">(</span><span class="va">method</span>, <span class="va">taxonomy_id</span>, <span class="va">name</span>, <span class="fu">all_of</span><span class="op">(</span><span class="va">samples</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">pivot_longer</span><span class="op">(</span><span class="fu">all_of</span><span class="op">(</span><span class="va">samples</span><span class="op">)</span>, names_to <span class="op">=</span> <span class="st">"sample_id"</span>, values_to <span class="op">=</span> <span class="st">"value"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">pivot_longer</span><span class="op">(</span><span class="fu">all_of</span><span class="op">(</span><span class="va">samples</span><span class="op">)</span>, names_to <span class="op">=</span> <span class="st">"sample_id"</span>,</span>
+<span>               values_to <span class="op">=</span> <span class="st">"value"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">group_by</span><span class="op">(</span><span class="va">method</span>, <span class="va">sample_id</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">mutate</span><span class="op">(</span>relabundance <span class="op">=</span> <span class="va">value</span> <span class="op">/</span> <span class="fu">sum</span><span class="op">(</span><span class="va">value</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">ungroup</span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -1484,31 +1585,32 @@ relative abundance so that it sums to 1.</p>
 <h3 class="code-label">OUTPUT<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="output" tabindex="0"><code># A tibble: 8,435 × 7
-   method            taxonomy_id name      sample_id   value relabundance column
-   &lt;chr&gt;             &lt;chr&gt;       &lt;chr&gt;     &lt;chr&gt;       &lt;dbl&gt;        &lt;dbl&gt; &lt;chr&gt;
- 1 Truth (taxonomic) 29391       Gemella … Gut_samp… 0.176        0.176   Gut_s…
- 2 Truth (taxonomic) 29391       Gemella … Gut_samp… 0.00874      0.00874 Gut_s…
- 3 Truth (taxonomic) 29391       Gemella … Gut_samp… 0.0540       0.0540  Gut_s…
- 4 Truth (taxonomic) 29391       Gemella … Gut_samp… 0.00774      0.00774 Gut_s…
- 5 Truth (taxonomic) 29391       Gemella … Gut_samp… 0            0       Gut_s…
- 6 Truth (taxonomic) 1680        Bifidoba… Gut_samp… 0.0194       0.0194  Gut_s…
- 7 Truth (taxonomic) 1680        Bifidoba… Gut_samp… 0.0278       0.0278  Gut_s…
- 8 Truth (taxonomic) 1680        Bifidoba… Gut_samp… 0.0130       0.0130  Gut_s…
- 9 Truth (taxonomic) 1680        Bifidoba… Gut_samp… 0.00250      0.00250 Gut_s…
-10 Truth (taxonomic) 1680        Bifidoba… Gut_samp… 0.167        0.167   Gut_s…
+   method      taxonomy_id name  sample_id   value relabundance column
+   &lt;chr&gt;       &lt;chr&gt;       &lt;chr&gt; &lt;chr&gt;       &lt;dbl&gt;        &lt;dbl&gt; &lt;chr&gt;
+ 1 Truth (tax… 29391       Geme… Gut_samp… 0.176        0.176   Gut_s…
+ 2 Truth (tax… 29391       Geme… Gut_samp… 0.00874      0.00874 Gut_s…
+ 3 Truth (tax… 29391       Geme… Gut_samp… 0.0540       0.0540  Gut_s…
+ 4 Truth (tax… 29391       Geme… Gut_samp… 0.00774      0.00774 Gut_s…
+ 5 Truth (tax… 29391       Geme… Gut_samp… 0            0       Gut_s…
+ 6 Truth (tax… 1680        Bifi… Gut_samp… 0.0194       0.0194  Gut_s…
+ 7 Truth (tax… 1680        Bifi… Gut_samp… 0.0278       0.0278  Gut_s…
+ 8 Truth (tax… 1680        Bifi… Gut_samp… 0.0130       0.0130  Gut_s…
+ 9 Truth (tax… 1680        Bifi… Gut_samp… 0.00250      0.00250 Gut_s…
+10 Truth (tax… 1680        Bifi… Gut_samp… 0.167        0.167   Gut_s…
 # ℹ 8,425 more rows</code></pre>
 </div>
 <p>Next, build the three parts of the object: the abundance matrix
 (<code>assay</code>), the column information (<code>colData</code>) and
 the row information (<code>rowData</code>):</p>
-<div class="codewrapper sourceCode" id="cb30">
+<div class="codewrapper sourceCode" id="cb31">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># abundance matrix: taxa x (sample | method)</span></span>
 <span><span class="va">wide</span> <span class="op">&lt;-</span> <span class="va">profiles</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">select</span><span class="op">(</span><span class="va">taxonomy_id</span>, <span class="va">column</span>, <span class="va">relabundance</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">pivot_wider</span><span class="op">(</span>names_from <span class="op">=</span> <span class="va">column</span>, values_from <span class="op">=</span> <span class="va">relabundance</span>, values_fill <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span>
+<span>  <span class="fu">pivot_wider</span><span class="op">(</span>names_from <span class="op">=</span> <span class="va">column</span>, values_from <span class="op">=</span> <span class="va">relabundance</span>,</span>
+<span>              values_fill <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span>
 <span><span class="va">abundance</span> <span class="op">&lt;-</span> <span class="fu">as.matrix</span><span class="op">(</span><span class="fu">select</span><span class="op">(</span><span class="va">wide</span>, <span class="op">-</span><span class="va">taxonomy_id</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu">rownames</span><span class="op">(</span><span class="va">abundance</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">wide</span><span class="op">$</span><span class="va">taxonomy_id</span></span>
 <span></span>
@@ -1517,9 +1619,11 @@ the row information (<code>rowData</code>):</p>
 <span>  <span class="fu">distinct</span><span class="op">(</span><span class="va">column</span>, <span class="va">sample_id</span>, <span class="va">method</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">mutate</span><span class="op">(</span>method <span class="op">=</span> <span class="fu">factor</span><span class="op">(</span><span class="va">method</span>, levels <span class="op">=</span> <span class="va">methods</span><span class="op">)</span>,</span>
 <span>         profiler <span class="op">=</span> <span class="fu">sub</span><span class="op">(</span><span class="st">" \\(.*"</span>, <span class="st">""</span>, <span class="va">method</span><span class="op">)</span>,</span>
-<span>         abundance_type <span class="op">=</span> <span class="fu">ifelse</span><span class="op">(</span><span class="fu">grepl</span><span class="op">(</span><span class="st">"sequence"</span>, <span class="va">method</span><span class="op">)</span> <span class="op">|</span> <span class="va">method</span> <span class="op">==</span> <span class="st">"Bracken"</span>,</span>
+<span>         abundance_type <span class="op">=</span> <span class="fu">ifelse</span><span class="op">(</span><span class="fu">grepl</span><span class="op">(</span><span class="st">"sequence"</span>, <span class="va">method</span><span class="op">)</span> <span class="op">|</span></span>
+<span>                                   <span class="va">method</span> <span class="op">==</span> <span class="st">"Bracken"</span>,</span>
 <span>                                 <span class="st">"sequence"</span>, <span class="st">"taxonomic"</span><span class="op">)</span>,</span>
-<span>         taxonomy <span class="op">=</span> <span class="fu">ifelse</span><span class="op">(</span><span class="fu">grepl</span><span class="op">(</span><span class="st">"sylph"</span>, <span class="va">method</span><span class="op">)</span>, <span class="st">"GTDB R220"</span>, <span class="st">"NCBI"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>         taxonomy <span class="op">=</span> <span class="fu">ifelse</span><span class="op">(</span><span class="fu">grepl</span><span class="op">(</span><span class="st">"sylph"</span>, <span class="va">method</span><span class="op">)</span>,</span>
+<span>                           <span class="st">"GTDB R220"</span>, <span class="st">"NCBI"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">as.data.frame</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu">rownames</span><span class="op">(</span><span class="va">col_info</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">col_info</span><span class="op">$</span><span class="va">column</span></span>
 <span></span>
@@ -1527,11 +1631,12 @@ the row information (<code>rowData</code>):</p>
 <span><span class="va">row_info</span> <span class="op">&lt;-</span> <span class="va">profiles</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">arrange</span><span class="op">(</span><span class="op">!</span><span class="fu">grepl</span><span class="op">(</span><span class="st">"Truth"</span>, <span class="va">method</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">distinct</span><span class="op">(</span><span class="va">taxonomy_id</span>, .keep_all <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">transmute</span><span class="op">(</span><span class="va">taxonomy_id</span>, <span class="va">name</span>, in_truth <span class="op">=</span> <span class="va">taxonomy_id</span> <span class="op">%in%</span> <span class="va">truth_tax</span><span class="op">$</span><span class="va">taxonomy_id</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">transmute</span><span class="op">(</span><span class="va">taxonomy_id</span>, <span class="va">name</span>,</span>
+<span>            in_truth <span class="op">=</span> <span class="va">taxonomy_id</span> <span class="op">%in%</span> <span class="va">truth_tax</span><span class="op">$</span><span class="va">taxonomy_id</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">as.data.frame</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="fu">rownames</span><span class="op">(</span><span class="va">row_info</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">row_info</span><span class="op">$</span><span class="va">taxonomy_id</span></span></code></pre>
 </div>
-<div class="codewrapper sourceCode" id="cb31">
+<div class="codewrapper sourceCode" id="cb32">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
@@ -1548,11 +1653,12 @@ the row information (<code>rowData</code>):</p>
 dim: 1101 35
 metadata(0):
 assays(1): relabundance
-rownames(1101): 29391 1680 ... 45497 Bifidobacterium sp959020155
+rownames(1101): 29391 1680 ... 45497 Bifidobacterium
+  sp959020155
 rowData names(3): taxonomy_id name in_truth
-colnames(35): Gut_sample1 | Truth (taxonomic) Gut_sample2 | Truth
-  (taxonomic) ... Gut_sample4 | sylph (sequence) Gut_sample5 | sylph
-  (sequence)
+colnames(35): Gut_sample1 | Truth (taxonomic) Gut_sample2 |
+  Truth (taxonomic) ... Gut_sample4 | sylph (sequence)
+  Gut_sample5 | sylph (sequence)
 colData names(6): column sample_id ... abundance_type taxonomy
 reducedDimNames(0):
 mainExpName: NULL
@@ -1562,7 +1668,7 @@ rowTree: NULL
 colLinks: NULL
 colTree: NULL</code></pre>
 </div>
-<div class="codewrapper sourceCode" id="cb33">
+<div class="codewrapper sourceCode" id="cb34">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
@@ -1586,15 +1692,18 @@ colTree: NULL</code></pre>
 <hr class="half-width">
 <p>The ground truth gives both abundance types for the same community.
 If all genomes were the same size, the two would be identical:</p>
-<div class="codewrapper sourceCode" id="cb35">
+<div class="codewrapper sourceCode" id="cb36">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">truth_long</span> <span class="op">&lt;-</span> <span class="va">truth_tax</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">pivot_longer</span><span class="op">(</span><span class="fu">all_of</span><span class="op">(</span><span class="va">samples</span><span class="op">)</span>, names_to <span class="op">=</span> <span class="st">"sample_id"</span>, values_to <span class="op">=</span> <span class="st">"taxonomic"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">inner_join</span><span class="op">(</span><span class="fu">pivot_longer</span><span class="op">(</span><span class="va">truth_seq</span>, <span class="fu">all_of</span><span class="op">(</span><span class="va">samples</span><span class="op">)</span>, names_to <span class="op">=</span> <span class="st">"sample_id"</span>,</span>
+<span>  <span class="fu">pivot_longer</span><span class="op">(</span><span class="fu">all_of</span><span class="op">(</span><span class="va">samples</span><span class="op">)</span>, names_to <span class="op">=</span> <span class="st">"sample_id"</span>,</span>
+<span>               values_to <span class="op">=</span> <span class="st">"taxonomic"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">inner_join</span><span class="op">(</span><span class="fu">pivot_longer</span><span class="op">(</span><span class="va">truth_seq</span>, <span class="fu">all_of</span><span class="op">(</span><span class="va">samples</span><span class="op">)</span>,</span>
+<span>                          names_to <span class="op">=</span> <span class="st">"sample_id"</span>,</span>
 <span>                          values_to <span class="op">=</span> <span class="st">"sequence"</span><span class="op">)</span>,</span>
-<span>             by <span class="op">=</span> <span class="fu">c</span><span class="op">(</span><span class="st">"taxonomy_id"</span>, <span class="st">"name"</span>, <span class="st">"gtdb_r220_species"</span>, <span class="st">"sample_id"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>             by <span class="op">=</span> <span class="fu">c</span><span class="op">(</span><span class="st">"taxonomy_id"</span>, <span class="st">"name"</span>, <span class="st">"gtdb_r220_species"</span>,</span>
+<span>                    <span class="st">"sample_id"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">filter</span><span class="op">(</span><span class="va">taxonomic</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">ggplot</span><span class="op">(</span><span class="va">truth_long</span>, <span class="fu">aes</span><span class="op">(</span><span class="va">taxonomic</span>, <span class="va">sequence</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
@@ -1609,7 +1718,7 @@ If all genomes were the same size, the two would be identical:</p>
 they contribute more reads per cell. Species below it have smaller
 genomes. Within a sample, the ratio of the two abundances is
 proportional to genome size:</p>
-<div class="codewrapper sourceCode" id="cb36">
+<div class="codewrapper sourceCode" id="cb37">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
@@ -1680,7 +1789,7 @@ gives rare taxa much more weight</td>
 </tr>
 </tbody>
 </table>
-<div class="codewrapper sourceCode" id="cb38">
+<div class="codewrapper sourceCode" id="cb39">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
@@ -1698,7 +1807,8 @@ gives rare taxa much more weight</td>
 <span><span class="op">}</span></span>
 <span></span>
 <span><span class="va">distance_to_truth</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span>, <span class="va">truth</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="fu">c</span><span class="op">(</span>`Bray-Curtis` <span class="op">=</span> <span class="fu">as.numeric</span><span class="op">(</span><span class="fu">vegdist</span><span class="op">(</span><span class="fu">rbind</span><span class="op">(</span><span class="va">x</span>, <span class="va">truth</span><span class="op">)</span>, method <span class="op">=</span> <span class="st">"bray"</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  <span class="fu">c</span><span class="op">(</span>`Bray-Curtis` <span class="op">=</span> <span class="fu">as.numeric</span><span class="op">(</span><span class="fu">vegdist</span><span class="op">(</span><span class="fu">rbind</span><span class="op">(</span><span class="va">x</span>, <span class="va">truth</span><span class="op">)</span>,</span>
+<span>                                        method <span class="op">=</span> <span class="st">"bray"</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>    L1   <span class="op">=</span> <span class="fu">sum</span><span class="op">(</span><span class="fu">abs</span><span class="op">(</span><span class="va">x</span> <span class="op">-</span> <span class="va">truth</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>    L2   <span class="op">=</span> <span class="fu">sqrt</span><span class="op">(</span><span class="fu">sum</span><span class="op">(</span><span class="op">(</span><span class="va">x</span> <span class="op">-</span> <span class="va">truth</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>    rJSD <span class="op">=</span> <span class="fu">rjsd</span><span class="op">(</span><span class="va">x</span>, <span class="va">truth</span><span class="op">)</span>,</span>
@@ -1707,26 +1817,29 @@ gives rare taxa much more weight</td>
 </div>
 <p>We compare each profiler against <strong>both</strong> truths, in
 every sample:</p>
-<div class="codewrapper sourceCode" id="cb39">
+<div class="codewrapper sourceCode" id="cb40">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ab</span> <span class="op">&lt;-</span> <span class="fu">assay</span><span class="op">(</span><span class="va">tse</span>, <span class="st">"relabundance"</span><span class="op">)</span></span></code></pre>
 </div>
-<div class="codewrapper sourceCode" id="cb40">
+<div class="codewrapper sourceCode" id="cb41">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">comparisons</span> <span class="op">&lt;-</span> <span class="fu">expand_grid</span><span class="op">(</span>sample_id <span class="op">=</span> <span class="va">samples</span>,</span>
 <span>                           method <span class="op">=</span> <span class="va">methods</span><span class="op">[</span><span class="op">-</span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">2</span><span class="op">)</span><span class="op">]</span>,</span>
-<span>                           truth <span class="op">=</span> <span class="fu">c</span><span class="op">(</span><span class="st">"Truth (taxonomic)"</span>, <span class="st">"Truth (sequence)"</span><span class="op">)</span><span class="op">)</span></span>
+<span>                           truth <span class="op">=</span> <span class="fu">c</span><span class="op">(</span><span class="st">"Truth (taxonomic)"</span>,</span>
+<span>                                     <span class="st">"Truth (sequence)"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">distances</span> <span class="op">&lt;-</span> <span class="va">comparisons</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">rowwise</span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">mutate</span><span class="op">(</span>d <span class="op">=</span> <span class="fu">list</span><span class="op">(</span><span class="fu">distance_to_truth</span><span class="op">(</span><span class="va">ab</span><span class="op">[</span>, <span class="fu">paste</span><span class="op">(</span><span class="va">sample_id</span>, <span class="va">method</span>, sep <span class="op">=</span> <span class="st">" | "</span><span class="op">)</span><span class="op">]</span>,</span>
-<span>                                    <span class="va">ab</span><span class="op">[</span>, <span class="fu">paste</span><span class="op">(</span><span class="va">sample_id</span>, <span class="va">truth</span>, sep <span class="op">=</span> <span class="st">" | "</span><span class="op">)</span><span class="op">]</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">mutate</span><span class="op">(</span>d <span class="op">=</span> <span class="fu">list</span><span class="op">(</span><span class="fu">distance_to_truth</span><span class="op">(</span></span>
+<span>    <span class="va">ab</span><span class="op">[</span>, <span class="fu">paste</span><span class="op">(</span><span class="va">sample_id</span>, <span class="va">method</span>, sep <span class="op">=</span> <span class="st">" | "</span><span class="op">)</span><span class="op">]</span>,</span>
+<span>    <span class="va">ab</span><span class="op">[</span>, <span class="fu">paste</span><span class="op">(</span><span class="va">sample_id</span>, <span class="va">truth</span>, sep <span class="op">=</span> <span class="st">" | "</span><span class="op">)</span><span class="op">]</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">unnest_wider</span><span class="op">(</span><span class="va">d</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">pivot_longer</span><span class="op">(</span><span class="va">`Bray-Curtis`</span><span class="op">:</span><span class="va">rAD</span>, names_to <span class="op">=</span> <span class="st">"measure"</span>, values_to <span class="op">=</span> <span class="st">"distance"</span><span class="op">)</span></span>
+<span>  <span class="fu">pivot_longer</span><span class="op">(</span><span class="va">`Bray-Curtis`</span><span class="op">:</span><span class="va">rAD</span>, names_to <span class="op">=</span> <span class="st">"measure"</span>,</span>
+<span>               values_to <span class="op">=</span> <span class="st">"distance"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">ggplot</span><span class="op">(</span><span class="va">distances</span>, <span class="fu">aes</span><span class="op">(</span><span class="va">method</span>, <span class="va">distance</span>, fill <span class="op">=</span> <span class="va">truth</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu">geom_boxplot</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
@@ -1735,14 +1848,15 @@ every sample:</p>
 <span>  <span class="fu">theme_bw</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu">theme</span><span class="op">(</span>axis.text.x <span class="op">=</span> <span class="fu">element_text</span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">45</span>, hjust <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span></code></pre>
 </div>
-<figure><img src="fig/03-community-analysis-rendered-distances-1.png" alt="" style="display: block; margin: auto;" class="figure mx-auto d-block"></figure><div class="codewrapper sourceCode" id="cb41">
+<figure><img src="fig/03-community-analysis-rendered-distances-1.png" alt="" style="display: block; margin: auto;" class="figure mx-auto d-block"></figure><div class="codewrapper sourceCode" id="cb42">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">distances</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">filter</span><span class="op">(</span><span class="va">measure</span> <span class="op">==</span> <span class="st">"Bray-Curtis"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">group_by</span><span class="op">(</span><span class="va">method</span>, <span class="va">truth</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">summarise</span><span class="op">(</span>mean_bray_curtis <span class="op">=</span> <span class="fu">round</span><span class="op">(</span><span class="fu">mean</span><span class="op">(</span><span class="va">distance</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span>, .groups <span class="op">=</span> <span class="st">"drop"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">summarise</span><span class="op">(</span>mean_bray_curtis <span class="op">=</span> <span class="fu">round</span><span class="op">(</span><span class="fu">mean</span><span class="op">(</span><span class="va">distance</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span>,</span>
+<span>            .groups <span class="op">=</span> <span class="st">"drop"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">pivot_wider</span><span class="op">(</span>names_from <span class="op">=</span> <span class="va">truth</span>, values_from <span class="op">=</span> <span class="va">mean_bray_curtis</span><span class="op">)</span></span></code></pre>
 </div>
 <div class="codewrapper">
@@ -1790,7 +1904,7 @@ each profiler report?</p>
 <button class="accordion-button solution-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSolution3" aria-expanded="false" aria-controls="collapseSolution3">
   <h4 class="accordion-header" id="headingSolution3"> Show me the solution </h4>
 </button>
-<div id="collapseSolution3" class="accordion-collapse collapse" data-bs-parent="#accordionSolution3" aria-labelledby="headingSolution3">
+<div id="collapseSolution3" class="accordion-collapse collapse" aria-labelledby="headingSolution3" data-bs-parent="#accordionSolution3">
 <div class="accordion-body">
 <p>rAD works on log-ratios, so a false positive at 0.001% counts as much
 as an error in a species at 10%. Bracken has around 500 low-abundance
@@ -1825,12 +1939,13 @@ were detected.</li>
 <p>Both truth tables contain the same species, so this part does not
 depend on abundance type. Many false positives sit at very low
 abundance, so we also apply abundance thresholds:</p>
-<div class="codewrapper sourceCode" id="cb43">
+<div class="codewrapper sourceCode" id="cb44">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">truth_presence</span> <span class="op">&lt;-</span> <span class="va">truth_tax</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">pivot_longer</span><span class="op">(</span><span class="fu">all_of</span><span class="op">(</span><span class="va">samples</span><span class="op">)</span>, names_to <span class="op">=</span> <span class="st">"sample_id"</span>, values_to <span class="op">=</span> <span class="st">"abundance"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">pivot_longer</span><span class="op">(</span><span class="fu">all_of</span><span class="op">(</span><span class="va">samples</span><span class="op">)</span>, names_to <span class="op">=</span> <span class="st">"sample_id"</span>,</span>
+<span>               values_to <span class="op">=</span> <span class="st">"abundance"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">filter</span><span class="op">(</span><span class="va">abundance</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">select</span><span class="op">(</span><span class="va">sample_id</span>, <span class="va">taxonomy_id</span><span class="op">)</span></span>
 <span></span>
@@ -1844,10 +1959,12 @@ abundance, so we also apply abundance thresholds:</p>
 <span>                  threshold <span class="op">=</span> <span class="fu">c</span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0.0001</span>, <span class="fl">0.001</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">rowwise</span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">mutate</span><span class="op">(</span></span>
-<span>    found <span class="op">=</span> <span class="fu">list</span><span class="op">(</span><span class="va">detection</span><span class="op">$</span><span class="va">taxonomy_id</span><span class="op">[</span><span class="va">detection</span><span class="op">$</span><span class="va">method</span> <span class="op">==</span> <span class="va">method</span> <span class="op">&amp;</span></span>
-<span>                                       <span class="va">detection</span><span class="op">$</span><span class="va">sample_id</span> <span class="op">==</span> <span class="va">sample_id</span> <span class="op">&amp;</span></span>
-<span>                                       <span class="va">detection</span><span class="op">$</span><span class="va">threshold</span> <span class="op">==</span> <span class="va">threshold</span><span class="op">]</span><span class="op">)</span>,</span>
-<span>    true  <span class="op">=</span> <span class="fu">list</span><span class="op">(</span><span class="va">truth_presence</span><span class="op">$</span><span class="va">taxonomy_id</span><span class="op">[</span><span class="va">truth_presence</span><span class="op">$</span><span class="va">sample_id</span> <span class="op">==</span> <span class="va">sample_id</span><span class="op">]</span><span class="op">)</span>,</span>
+<span>    found <span class="op">=</span> <span class="fu">list</span><span class="op">(</span><span class="va">detection</span><span class="op">$</span><span class="va">taxonomy_id</span><span class="op">[</span></span>
+<span>      <span class="va">detection</span><span class="op">$</span><span class="va">method</span> <span class="op">==</span> <span class="va">method</span> <span class="op">&amp;</span></span>
+<span>        <span class="va">detection</span><span class="op">$</span><span class="va">sample_id</span> <span class="op">==</span> <span class="va">sample_id</span> <span class="op">&amp;</span></span>
+<span>        <span class="va">detection</span><span class="op">$</span><span class="va">threshold</span> <span class="op">==</span> <span class="va">threshold</span><span class="op">]</span><span class="op">)</span>,</span>
+<span>    true  <span class="op">=</span> <span class="fu">list</span><span class="op">(</span><span class="va">truth_presence</span><span class="op">$</span><span class="va">taxonomy_id</span><span class="op">[</span></span>
+<span>      <span class="va">truth_presence</span><span class="op">$</span><span class="va">sample_id</span> <span class="op">==</span> <span class="va">sample_id</span><span class="op">]</span><span class="op">)</span>,</span>
 <span>    TP <span class="op">=</span> <span class="fu">length</span><span class="op">(</span><span class="fu">intersect</span><span class="op">(</span><span class="va">found</span>, <span class="va">true</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>    FP <span class="op">=</span> <span class="fu">length</span><span class="op">(</span><span class="fu">setdiff</span><span class="op">(</span><span class="va">found</span>, <span class="va">true</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>    FN <span class="op">=</span> <span class="fu">length</span><span class="op">(</span><span class="fu">setdiff</span><span class="op">(</span><span class="va">true</span>, <span class="va">found</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -1858,38 +1975,40 @@ abundance, so we also apply abundance thresholds:</p>
 <span></span>
 <span><span class="va">pr</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">group_by</span><span class="op">(</span><span class="va">method</span>, <span class="va">threshold</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">summarise</span><span class="op">(</span><span class="fu">across</span><span class="op">(</span><span class="fu">c</span><span class="op">(</span><span class="va">TP</span>, <span class="va">FP</span>, <span class="va">FN</span>, <span class="va">precision</span>, <span class="va">recall</span>, <span class="va">F1</span><span class="op">)</span>, \<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu">round</span><span class="op">(</span><span class="fu">mean</span><span class="op">(</span><span class="va">x</span><span class="op">)</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  <span class="fu">summarise</span><span class="op">(</span><span class="fu">across</span><span class="op">(</span><span class="fu">c</span><span class="op">(</span><span class="va">TP</span>, <span class="va">FP</span>, <span class="va">FN</span>, <span class="va">precision</span>, <span class="va">recall</span>, <span class="va">F1</span><span class="op">)</span>,</span>
+<span>                   \<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu">round</span><span class="op">(</span><span class="fu">mean</span><span class="op">(</span><span class="va">x</span><span class="op">)</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>            .groups <span class="op">=</span> <span class="st">"drop"</span><span class="op">)</span></span></code></pre>
 </div>
 <div class="codewrapper">
 <h3 class="code-label">OUTPUT<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="output" tabindex="0"><code># A tibble: 15 × 8
-   method            threshold    TP    FP    FN precision recall    F1
-   &lt;chr&gt;                 &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt;
- 1 Bracken              0       65.2 505     0.8      0.11   0.99  0.21
- 2 Bracken              0.0001  63.6  28.2   2.4      0.69   0.96  0.81
- 3 Bracken              0.001   60.8   4.8   5.2      0.93   0.92  0.92
- 4 MetaPhlAn            0       65     9.8   1        0.87   0.99  0.92
- 5 MetaPhlAn            0.0001  64.4   2.8   1.6      0.96   0.98  0.97
- 6 MetaPhlAn            0.001   62.4   1.2   3.6      0.98   0.95  0.96
- 7 mOTUs                0       66     6.4   0        0.91   1     0.96
- 8 mOTUs                0.0001  66     6.4   0        0.91   1     0.96
- 9 mOTUs                0.001   65     2     1        0.97   0.99  0.98
-10 sylph (sequence)     0       66     0.2   0        1      1     1
-11 sylph (sequence)     0.0001  66     0.2   0        1      1     1
-12 sylph (sequence)     0.001   65.2   0.2   0.8      1      0.99  0.99
-13 sylph (taxonomic)    0       66     0.2   0        1      1     1
-14 sylph (taxonomic)    0.0001  66     0.2   0        1      1     1
-15 sylph (taxonomic)    0.001   65.2   0.2   0.8      1      0.99  0.99</code></pre>
+   method           threshold    TP    FP    FN precision recall    F1
+   &lt;chr&gt;                &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt;
+ 1 Bracken             0       65.2 505     0.8      0.11   0.99  0.21
+ 2 Bracken             0.0001  63.6  28.2   2.4      0.69   0.96  0.81
+ 3 Bracken             0.001   60.8   4.8   5.2      0.93   0.92  0.92
+ 4 MetaPhlAn           0       65     9.8   1        0.87   0.99  0.92
+ 5 MetaPhlAn           0.0001  64.4   2.8   1.6      0.96   0.98  0.97
+ 6 MetaPhlAn           0.001   62.4   1.2   3.6      0.98   0.95  0.96
+ 7 mOTUs               0       66     6.4   0        0.91   1     0.96
+ 8 mOTUs               0.0001  66     6.4   0        0.91   1     0.96
+ 9 mOTUs               0.001   65     2     1        0.97   0.99  0.98
+10 sylph (sequence)    0       66     0.2   0        1      1     1
+11 sylph (sequence)    0.0001  66     0.2   0        1      1     1
+12 sylph (sequence)    0.001   65.2   0.2   0.8      1      0.99  0.99
+13 sylph (taxonomi…    0       66     0.2   0        1      1     1
+14 sylph (taxonomi…    0.0001  66     0.2   0        1      1     1
+15 sylph (taxonomi…    0.001   65.2   0.2   0.8      1      0.99  0.99</code></pre>
 </div>
-<div class="codewrapper sourceCode" id="cb45">
+<div class="codewrapper sourceCode" id="cb46">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pr</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">pivot_longer</span><span class="op">(</span><span class="fu">c</span><span class="op">(</span><span class="va">precision</span>, <span class="va">recall</span>, <span class="va">F1</span><span class="op">)</span>, names_to <span class="op">=</span> <span class="st">"score"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">mutate</span><span class="op">(</span>threshold <span class="op">=</span> <span class="fu">factor</span><span class="op">(</span><span class="fu">paste0</span><span class="op">(</span><span class="va">threshold</span> <span class="op">*</span> <span class="fl">100</span>, <span class="st">"%"</span><span class="op">)</span>, levels <span class="op">=</span> <span class="fu">c</span><span class="op">(</span><span class="st">"0%"</span>, <span class="st">"0.01%"</span>, <span class="st">"0.1%"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">mutate</span><span class="op">(</span>threshold <span class="op">=</span> <span class="fu">factor</span><span class="op">(</span><span class="fu">paste0</span><span class="op">(</span><span class="va">threshold</span> <span class="op">*</span> <span class="fl">100</span>, <span class="st">"%"</span><span class="op">)</span>,</span>
+<span>                            levels <span class="op">=</span> <span class="fu">c</span><span class="op">(</span><span class="st">"0%"</span>, <span class="st">"0.01%"</span>, <span class="st">"0.1%"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">ggplot</span><span class="op">(</span><span class="fu">aes</span><span class="op">(</span><span class="va">threshold</span>, <span class="va">value</span>, colour <span class="op">=</span> <span class="va">method</span>, group <span class="op">=</span> <span class="va">method</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu">stat_summary</span><span class="op">(</span>fun <span class="op">=</span> <span class="va">mean</span>, geom <span class="op">=</span> <span class="st">"line"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu">stat_summary</span><span class="op">(</span>fun <span class="op">=</span> <span class="va">mean</span>, geom <span class="op">=</span> <span class="st">"point"</span><span class="op">)</span> <span class="op">+</span></span>
@@ -1942,7 +2061,7 @@ weights taxa by their abundance.</li>
 <strong>Inverse Simpson index</strong>: the “effective number” of
 dominant taxa, and the least sensitive to rare taxa.</li>
 </ul>
-<div class="codewrapper sourceCode" id="cb46">
+<div class="codewrapper sourceCode" id="cb47">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
@@ -1951,7 +2070,8 @@ dominant taxa, and the least sensitive to rare taxa.</li>
 <span></span>
 <span><span class="fu">as.data.frame</span><span class="op">(</span><span class="fu">colData</span><span class="op">(</span><span class="va">tse</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">group_by</span><span class="op">(</span><span class="va">method</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">summarise</span><span class="op">(</span><span class="fu">across</span><span class="op">(</span><span class="fu">c</span><span class="op">(</span><span class="va">observed</span>, <span class="va">shannon</span>, <span class="va">inverse_simpson</span><span class="op">)</span>, \<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu">round</span><span class="op">(</span><span class="fu">mean</span><span class="op">(</span><span class="va">x</span><span class="op">)</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre>
+<span>  <span class="fu">summarise</span><span class="op">(</span><span class="fu">across</span><span class="op">(</span><span class="fu">c</span><span class="op">(</span><span class="va">observed</span>, <span class="va">shannon</span>, <span class="va">inverse_simpson</span><span class="op">)</span>,</span>
+<span>                   \<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu">round</span><span class="op">(</span><span class="fu">mean</span><span class="op">(</span><span class="va">x</span><span class="op">)</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre>
 </div>
 <div class="codewrapper">
 <h3 class="code-label">OUTPUT<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
@@ -1967,11 +2087,12 @@ dominant taxa, and the least sensitive to rare taxa.</li>
 6 sylph (taxonomic)     66.2    3.68            24.8
 7 sylph (sequence)      66.2    3.68            27.3</code></pre>
 </div>
-<div class="codewrapper sourceCode" id="cb48">
+<div class="codewrapper sourceCode" id="cb49">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">plotColData</span><span class="op">(</span><span class="va">tse</span>, x <span class="op">=</span> <span class="st">"method"</span>, y <span class="op">=</span> <span class="st">"observed"</span>, colour_by <span class="op">=</span> <span class="st">"sample_id"</span><span class="op">)</span> <span class="op">+</span></span>
+<code class="sourceCode R"><span><span class="fu">plotColData</span><span class="op">(</span><span class="va">tse</span>, x <span class="op">=</span> <span class="st">"method"</span>, y <span class="op">=</span> <span class="st">"observed"</span>,</span>
+<span>            colour_by <span class="op">=</span> <span class="st">"sample_id"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu">scale_y_log10</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu">labs</span><span class="op">(</span>x <span class="op">=</span> <span class="cn">NULL</span>, y <span class="op">=</span> <span class="st">"Observed richness (log scale)"</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu">theme</span><span class="op">(</span>axis.text.x <span class="op">=</span> <span class="fu">element_text</span><span class="op">(</span>angle <span class="op">=</span> <span class="fl">45</span>, hjust <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
@@ -1988,7 +2109,7 @@ it.</p>
 <p>Sun <em>et al.</em> found that the Shannon index is systematically
 higher for taxonomic than for sequence abundance. Is that the case for
 our five samples?</p>
-<div class="codewrapper sourceCode" id="cb49">
+<div class="codewrapper sourceCode" id="cb50">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
@@ -1998,8 +2119,8 @@ our five samples?</p>
 <span>  <span class="fu">pivot_wider</span><span class="op">(</span>names_from <span class="op">=</span> <span class="va">method</span>, values_from <span class="op">=</span> <span class="va">shannon</span><span class="op">)</span></span>
 <span><span class="va">shannon_truth</span></span>
 <span></span>
-<span><span class="fu">wilcox.test</span><span class="op">(</span><span class="va">shannon_truth</span><span class="op">$</span><span class="va">`Truth (taxonomic)`</span>, <span class="va">shannon_truth</span><span class="op">$</span><span class="va">`Truth (sequence)`</span>,</span>
-<span>            paired <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre>
+<span><span class="fu">wilcox.test</span><span class="op">(</span><span class="va">shannon_truth</span><span class="op">$</span><span class="va">`Truth (taxonomic)`</span>,</span>
+<span>            <span class="va">shannon_truth</span><span class="op">$</span><span class="va">`Truth (sequence)`</span>, paired <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre>
 </div>
 <div class="codewrapper">
 <h3 class="code-label">OUTPUT<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
@@ -2015,7 +2136,8 @@ our five samples?</p>
 
 	Wilcoxon signed rank exact test
 
-data:  shannon_truth$`Truth (taxonomic)` and shannon_truth$`Truth (sequence)`
+data: shannon_truth$`Truth (taxonomic)` and shannon_truth$`Truth
+    (sequence)`
 V = 6, p-value = 0.8125
 alternative hypothesis: true location shift is not equal to 0</code></pre>
 </div>
@@ -2043,19 +2165,21 @@ affected most?</p>
 <button class="accordion-button solution-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSolution4" aria-expanded="false" aria-controls="collapseSolution4">
   <h4 class="accordion-header" id="headingSolution4"> Show me the solution </h4>
 </button>
-<div id="collapseSolution4" class="accordion-collapse collapse" data-bs-parent="#accordionSolution4" aria-labelledby="headingSolution4">
+<div id="collapseSolution4" class="accordion-collapse collapse" aria-labelledby="headingSolution4" data-bs-parent="#accordionSolution4">
 <div class="accordion-body">
-<div class="codewrapper sourceCode" id="cb51">
+<div class="codewrapper sourceCode" id="cb52">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">assay</span><span class="op">(</span><span class="va">tse</span>, <span class="st">"filtered"</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu">ifelse</span><span class="op">(</span><span class="fu">assay</span><span class="op">(</span><span class="va">tse</span>, <span class="st">"relabundance"</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">0.001</span>,</span>
 <span>                                 <span class="fu">assay</span><span class="op">(</span><span class="va">tse</span>, <span class="st">"relabundance"</span><span class="op">)</span>, <span class="fl">0</span><span class="op">)</span></span>
-<span><span class="va">tse</span> <span class="op">&lt;-</span> <span class="fu">addAlpha</span><span class="op">(</span><span class="va">tse</span>, assay.type <span class="op">=</span> <span class="st">"filtered"</span>, index <span class="op">=</span> <span class="st">"observed"</span>, name <span class="op">=</span> <span class="st">"observed_filtered"</span><span class="op">)</span></span>
+<span><span class="va">tse</span> <span class="op">&lt;-</span> <span class="fu">addAlpha</span><span class="op">(</span><span class="va">tse</span>, assay.type <span class="op">=</span> <span class="st">"filtered"</span>, index <span class="op">=</span> <span class="st">"observed"</span>,</span>
+<span>                name <span class="op">=</span> <span class="st">"observed_filtered"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">as.data.frame</span><span class="op">(</span><span class="fu">colData</span><span class="op">(</span><span class="va">tse</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">group_by</span><span class="op">(</span><span class="va">method</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">summarise</span><span class="op">(</span>observed <span class="op">=</span> <span class="fu">mean</span><span class="op">(</span><span class="va">observed</span><span class="op">)</span>, observed_filtered <span class="op">=</span> <span class="fu">mean</span><span class="op">(</span><span class="va">observed_filtered</span><span class="op">)</span><span class="op">)</span></span></code></pre>
+<span>  <span class="fu">summarise</span><span class="op">(</span>observed <span class="op">=</span> <span class="fu">mean</span><span class="op">(</span><span class="va">observed</span><span class="op">)</span>,</span>
+<span>            observed_filtered <span class="op">=</span> <span class="fu">mean</span><span class="op">(</span><span class="va">observed_filtered</span><span class="op">)</span><span class="op">)</span></span></code></pre>
 </div>
 <div class="codewrapper">
 <h3 class="code-label">OUTPUT<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
@@ -2086,14 +2210,16 @@ richness is no longer the richness of the community.</p>
 <p>Beta diversity compares samples with each other. We calculate
 Bray–Curtis dissimilarities between all 35 columns and display them with
 a principal coordinates analysis (PCoA):</p>
-<div class="codewrapper sourceCode" id="cb53">
+<div class="codewrapper sourceCode" id="cb54">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tse</span> <span class="op">&lt;-</span> <span class="fu">addMDS</span><span class="op">(</span><span class="va">tse</span>, FUN <span class="op">=</span> <span class="va">getDissimilarity</span>, method <span class="op">=</span> <span class="st">"bray"</span>,</span>
-<span>              assay.type <span class="op">=</span> <span class="st">"relabundance"</span>, name <span class="op">=</span> <span class="st">"PCoA_BC"</span>, ncomponents <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
+<span>              assay.type <span class="op">=</span> <span class="st">"relabundance"</span>, name <span class="op">=</span> <span class="st">"PCoA_BC"</span>,</span>
+<span>              ncomponents <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">plotReducedDim</span><span class="op">(</span><span class="va">tse</span>, <span class="st">"PCoA_BC"</span>, colour_by <span class="op">=</span> <span class="st">"method"</span>, shape_by <span class="op">=</span> <span class="st">"sample_id"</span>, point_size <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></code></pre>
+<span><span class="fu">plotReducedDim</span><span class="op">(</span><span class="va">tse</span>, <span class="st">"PCoA_BC"</span>, colour_by <span class="op">=</span> <span class="st">"method"</span>,</span>
+<span>               shape_by <span class="op">=</span> <span class="st">"sample_id"</span>, point_size <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></code></pre>
 </div>
 <figure><img src="fig/03-pcoa-1.png" alt="PCoA of Bray-Curtis dissimilarities, coloured by method and shaped by sample" style="display: block; margin: auto;" class="figure mx-auto d-block"></figure><p>The points form five tight groups, one per sample: the samples differ
 much more from each other than the profilers differ from each other.
@@ -2101,15 +2227,17 @@ Within each group, the profiler still moves the point.</p>
 <p>How much of the variation does each factor explain? PERMANOVA
 (<code>vegan::adonis2()</code>) partitions the dissimilarities between
 sample and method:</p>
-<div class="codewrapper sourceCode" id="cb54">
+<div class="codewrapper sourceCode" id="cb55">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">bray</span> <span class="op">&lt;-</span> <span class="fu">getDissimilarity</span><span class="op">(</span><span class="va">tse</span>, method <span class="op">=</span> <span class="st">"bray"</span>, assay.type <span class="op">=</span> <span class="st">"relabundance"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">bray</span> <span class="op">&lt;-</span> <span class="fu">getDissimilarity</span><span class="op">(</span><span class="va">tse</span>, method <span class="op">=</span> <span class="st">"bray"</span>,</span>
+<span>                         assay.type <span class="op">=</span> <span class="st">"relabundance"</span><span class="op">)</span></span>
 <span><span class="va">col_df</span> <span class="op">&lt;-</span> <span class="fu">as.data.frame</span><span class="op">(</span><span class="fu">colData</span><span class="op">(</span><span class="va">tse</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">set.seed</span><span class="op">(</span><span class="fl">2026</span><span class="op">)</span></span>
-<span><span class="fu">adonis2</span><span class="op">(</span><span class="va">bray</span> <span class="op">~</span> <span class="va">sample_id</span> <span class="op">+</span> <span class="va">method</span>, data <span class="op">=</span> <span class="va">col_df</span>, by <span class="op">=</span> <span class="st">"margin"</span>, permutations <span class="op">=</span> <span class="fl">999</span><span class="op">)</span></span></code></pre>
+<span><span class="fu">adonis2</span><span class="op">(</span><span class="va">bray</span> <span class="op">~</span> <span class="va">sample_id</span> <span class="op">+</span> <span class="va">method</span>, data <span class="op">=</span> <span class="va">col_df</span>, by <span class="op">=</span> <span class="st">"margin"</span>,</span>
+<span>        permutations <span class="op">=</span> <span class="fl">999</span><span class="op">)</span></span></code></pre>
 </div>
 <div class="codewrapper">
 <h3 class="code-label">OUTPUT<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
@@ -2119,7 +2247,8 @@ Marginal effects of terms
 Permutation: free
 Number of permutations: 999
 
-adonis2(formula = bray ~ sample_id + method, data = col_df, permutations = 999, by = "margin")
+adonis2(formula = bray ~ sample_id + method, data = col_df,
+    permutations = 999, by = "margin")
           Df SumOfSqs      R2       F Pr(&gt;F)
 sample_id  4   6.2966 0.95432 4889.64  0.001 ***
 method     6   0.2937 0.04451  152.03  0.001 ***
@@ -2132,7 +2261,7 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 about 4.5%, which is small but clearly significant. PERMANOVA assumes
 the groups have a similar spread, so we check that with
 <code>betadisper()</code>:</p>
-<div class="codewrapper sourceCode" id="cb56">
+<div class="codewrapper sourceCode" id="cb57">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
@@ -2203,7 +2332,7 @@ any links that you are not going to use.
  -->
 </section></section><section id="aio-04-differential-abundance"><p>Content from <a href="04-differential-abundance.html">Differential abundance testing</a></p>
 <hr>
-<p>Last updated on 2026-11-02 |
+<p>Last updated on 2026-11-03 |
 
         <a href="https://github.com/melbournebioinformatics/workbench-template-rmd/edit/main/episodes/04-differential-abundance.Rmd" class="external-link">Edit this page <i aria-hidden="true" data-feather="edit"></i></a></p>
 <div class="text-end">
@@ -2218,6 +2347,9 @@ any links that you are not going to use.
 <h3 class="card-title">Questions</h3>
 <ul>
 <li>Which taxa differ in abundance between groups of samples?</li>
+<li>Why can we not simply run a t-test on relative abundances?</li>
+<li>How do we read and check the results of ANCOM-BC2?</li>
+<li>What might the differentially abundant taxa be doing?</li>
 </ul>
 </div>
 </div>
@@ -2228,12 +2360,742 @@ any links that you are not going to use.
 <h3 class="card-title">Objectives</h3>
 <ul>
 <li>Define an appropriate differential abundance question and
-statistical test</li>
-<li>Interpret coefficients, confidence intervals and
-false-discovery-rate-adjusted values</li>
+statistical model</li>
+<li>Run ANCOM-BC2 on a <code>TreeSummarizedExperiment</code>
+</li>
+<li>Interpret log-fold changes, confidence intervals,
+false-discovery-rate-adjusted values and the sensitivity analysis</li>
 <li>Compare statistical results with abundance patterns</li>
+<li>Link differentially abundant taxa to the pathways they contribute to
+in HUMAnN</li>
 </ul>
 </div>
+</div>
+</div>
+</div>
+</div>
+<section><h2 class="section-heading" id="the-question">The question<a class="anchor" aria-label="anchor" href="#the-question"></a>
+</h2>
+<hr class="half-width">
+<p>So far today we have worked with five simulated samples, which are
+ideal for comparing profilers against a known truth but have no groups
+to compare. Differential abundance (DA) testing asks a different
+question: <strong>which taxa are more or less abundant in one group of
+samples than in another?</strong> To answer it we need real samples from
+two or more groups, so in this episode we switch to a published
+study.</p>
+<p>Qin <em>et al.</em> (2014), <a href="https://doi.org/10.1038/nature13568" class="external-link"><em>Alterations of the human
+gut microbiome in liver cirrhosis</em></a>, sequenced stool from 123
+patients with liver cirrhosis and 114 healthy controls in China. We use
+the version in <a href="https://waldronlab.io/curatedMetagenomicData/" class="external-link">curatedMetagenomicData</a>,
+where every study has been reprocessed with the same pipeline: MetaPhlAn
+for the taxonomic profiles and HUMAnN for the functional profiles, the
+same tools we ran on Day 1. Our question is:</p>
+<blockquote>
+<p>Which bacterial genera differ in abundance between patients with
+cirrhosis and controls, after adjusting for age, sex and body mass index
+(BMI)?</p>
+</blockquote>
+<p>Writing the question down this precisely matters, because each part
+of it becomes a part of the model: the taxonomic level (genus), the
+comparison (cirrhosis versus controls, with controls as the reference)
+and the covariates we adjust for (age, sex and BMI), which might
+otherwise confound the comparison.</p>
+</section><section><h2 class="section-heading" id="why-not-a-t-test-on-relative-abundances">Why not a t-test on relative abundances?<a class="anchor" aria-label="anchor" href="#why-not-a-t-test-on-relative-abundances"></a>
+</h2>
+<hr class="half-width">
+<p>Three properties of microbiome data make standard tests
+misleading:</p>
+<ul>
+<li>
+<strong>The data are compositional.</strong> Sequencing gives us
+proportions, not absolute amounts. If one genus doubles, every other
+genus takes up a smaller share of the reads even if its real abundance
+has not changed, so a test on relative abundances can report changes
+that did not happen.</li>
+<li>
+<strong>Samples are sequenced to different depths, and each sample
+captures a different, unknown fraction of the DNA in the original
+stool.</strong> This <em>sampling fraction</em> differs between samples
+and adds a sample-specific bias to every taxon.</li>
+<li>
+<strong>There are many zeros.</strong> Most genera are absent, or
+below the detection limit, in many samples, and log-based methods need
+to deal with them somehow.</li>
+</ul>
+<p><strong>ANCOM-BC2</strong> (Analysis of Compositions of Microbiomes
+with Bias Correction 2; <a href="https://doi.org/10.1038/s41592-023-02092-7" class="external-link">Lin and Peddada,
+2024</a>) addresses the first two problems by modelling the log
+abundance of each taxon with a linear model that includes the
+covariates, then estimating and removing the sample-specific bias. It
+returns, for each taxon, a bias-corrected log-fold change between
+groups, its standard error, a p-value and a false-discovery-rate (FDR)
+adjusted q-value. For the zeros, it adds a small pseudo-count before
+taking logs and can run a <strong>sensitivity analysis</strong> that
+checks whether a result depends on the size of that pseudo-count.</p>
+<p>ANCOM-BC2 is one of many DA methods (others include ALDEx2, LinDA,
+MaAsLin and ZicoSeq), and different methods do not always agree. A good
+habit for your own analyses is to check whether your main results hold
+with a second method.</p>
+</section><section><h2 class="section-heading" id="load-packages-and-data">Load packages and data<a class="anchor" aria-label="anchor" href="#load-packages-and-data"></a>
+</h2>
+<hr class="half-width">
+<div class="codewrapper sourceCode" id="cb1">
+<h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
+</h3>
+<pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw">library</span><span class="op">(</span><span class="va">mia</span><span class="op">)</span></span>
+<span><span class="kw">library</span><span class="op">(</span><span class="va">miaViz</span><span class="op">)</span></span>
+<span><span class="kw">library</span><span class="op">(</span><span class="va">ANCOMBC</span><span class="op">)</span></span>
+<span><span class="kw">library</span><span class="op">(</span><span class="va">dplyr</span><span class="op">)</span></span>
+<span><span class="kw">library</span><span class="op">(</span><span class="va">tidyr</span><span class="op">)</span></span>
+<span><span class="kw">library</span><span class="op">(</span><span class="va">ggplot2</span><span class="op">)</span></span></code></pre>
+</div>
+<p>As in the previous episode, load <code>mia</code> before
+<code>dplyr</code> so that <code>dplyr</code>’s join functions are not
+masked. ANCOM-BC2 also needs the <code>microbiome</code> and
+<code>phyloseq</code> packages to read a
+<code>TreeSummarizedExperiment</code>; they are installed on the
+workshop server, but you need them if you run this on your own
+computer.</p>
+<p>The data file holds two <code>TreeSummarizedExperiment</code> objects
+with the same 237 samples: the MetaPhlAn profiles (<code>taxa</code>)
+and the HUMAnN pathway abundances (<code>pathways</code>). On the
+workshop RStudio Server the file is in
+<code>/data/workshop_data/day2_ep4/</code>:</p>
+<div class="codewrapper sourceCode" id="cb2">
+<h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
+</h3>
+<pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">data_dir</span> <span class="op">&lt;-</span> <span class="st">"/data/workshop_data/day2_ep4"</span></span></code></pre>
+</div>
+<div class="codewrapper sourceCode" id="cb3">
+<h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
+</h3>
+<pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu">readRDS</span><span class="op">(</span><span class="fu">file.path</span><span class="op">(</span><span class="va">data_dir</span>, <span class="st">"qin2014_cirrhosis.rds"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">tse</span> <span class="op">&lt;-</span> <span class="va">dat</span><span class="op">$</span><span class="va">taxa</span></span>
+<span><span class="va">tse</span></span></code></pre>
+</div>
+<div class="codewrapper">
+<h3 class="code-label">OUTPUT<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
+</h3>
+<pre class="output" tabindex="0"><code>class: TreeSummarizedExperiment
+dim: 645 237
+metadata(0):
+assays(1): counts
+rownames(645): Phocaeicola vulgatus Bacteroides eggerthii ...
+  Firmicutes bacterium CAG:646 Prevotella marshii
+rowData names(7): superkingdom phylum ... genus species
+colnames(237): HD-1 HD-10 ... LV-8 LV-9
+colData names(5): group age gender BMI number_reads
+reducedDimNames(0):
+mainExpName: NULL
+altExpNames(0):
+rowLinks: a LinkDataFrame (645 rows)
+rowTree: 1 phylo tree(s) (10430 leaves)
+colLinks: NULL
+colTree: NULL</code></pre>
+</div>
+<p>Let’s check the groups and the covariates:</p>
+<div class="codewrapper sourceCode" id="cb5">
+<h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
+</h3>
+<pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">table</span><span class="op">(</span><span class="va">tse</span><span class="op">$</span><span class="va">group</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">as.data.frame</span><span class="op">(</span><span class="fu">colData</span><span class="op">(</span><span class="va">tse</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">group_by</span><span class="op">(</span><span class="va">group</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">summarise</span><span class="op">(</span>n <span class="op">=</span> <span class="fu">n</span><span class="op">(</span><span class="op">)</span>, median_age <span class="op">=</span> <span class="fu">median</span><span class="op">(</span><span class="va">age</span><span class="op">)</span>, median_BMI <span class="op">=</span> <span class="fu">median</span><span class="op">(</span><span class="va">BMI</span><span class="op">)</span>,</span>
+<span>            percent_male <span class="op">=</span> <span class="fu">round</span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="fu">mean</span><span class="op">(</span><span class="va">gender</span> <span class="op">==</span> <span class="st">"male"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre>
+</div>
+<div class="codewrapper">
+<h3 class="code-label">OUTPUT<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
+</h3>
+<pre class="output" tabindex="0"><code>
+  control cirrhosis
+      114       123
+# A tibble: 2 x 5
+  group         n median_age median_BMI percent_male
+  &lt;fct&gt;     &lt;int&gt;      &lt;dbl&gt;      &lt;dbl&gt;        &lt;dbl&gt;
+1 control     114       41.5       21.5           63
+2 cirrhosis   123       49         22.4           68</code></pre>
+</div>
+<p><code>group</code> is a factor with <code>control</code> as its first
+level, so ANCOM-BC2 will use the controls as the reference and report
+changes in cirrhosis relative to them. The patients are on average about
+seven years older than the controls, which is one reason to adjust for
+age.</p>
+<div id="estimated-counts-from-metaphlan" class="callout">
+<div class="callout-square">
+<i class="callout-icon" data-feather="bell"></i>
+</div>
+<span class="callout-header">Callout</span>
+<div id="estimated-counts-from-metaphlan" class="callout-inner">
+<h3 class="callout-title">Estimated counts from MetaPhlAn</h3>
+<div class="callout-content">
+<p>ANCOM-BC2 expects counts, but MetaPhlAn reports relative abundances.
+The <code>counts</code> assay here is curatedMetagenomicData’s estimate:
+each sample’s relative abundances multiplied by its total number of
+reads. These are not reads actually assigned to each taxon, so they
+carry less information about uncertainty than real counts, and the
+standard errors of rare taxa may be slightly too small. ANCOM-BC2 still
+works on them because it models log abundances and removes
+sample-specific scaling, which is exactly what the multiplication by
+read number introduces, and because a pseudo-count of 1 is negligible on
+this scale (it would not be on percentages).</p>
+<p>For your own data, prefer real counts: Kraken2/Bracken read counts,
+or MetaPhlAn run with <code>-t rel_ab_w_read_stats</code>, which reports
+the estimated number of reads per clade.</p>
+</div>
+</div>
+</div>
+</section><section><h2 class="section-heading" id="running-ancom-bc2">Running ANCOM-BC2<a class="anchor" aria-label="anchor" href="#running-ancom-bc2"></a>
+</h2>
+<hr class="half-width">
+<p>We test at genus level, so we first sum the species into genera as we
+did on Day 1:</p>
+<div class="codewrapper sourceCode" id="cb7">
+<h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
+</h3>
+<pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">tse_genus</span> <span class="op">&lt;-</span> <span class="fu">agglomerateByRank</span><span class="op">(</span><span class="va">tse</span>, rank <span class="op">=</span> <span class="st">"genus"</span><span class="op">)</span></span>
+<span><span class="fu">dim</span><span class="op">(</span><span class="va">tse_genus</span><span class="op">)</span></span></code></pre>
+</div>
+<div class="codewrapper">
+<h3 class="code-label">OUTPUT<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
+</h3>
+<pre class="output" tabindex="0"><code>[1] 207 237</code></pre>
+</div>
+<p>Now we run ANCOM-BC2. The analysis is random in a small part (the
+sensitivity analysis), so we set a seed to get the same results every
+time:</p>
+<div class="codewrapper sourceCode" id="cb9">
+<h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
+</h3>
+<pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">set.seed</span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
+<span><span class="va">out</span> <span class="op">&lt;-</span> <span class="fu">ancombc2</span><span class="op">(</span></span>
+<span>  data         <span class="op">=</span> <span class="va">tse_genus</span>,</span>
+<span>  assay.type   <span class="op">=</span> <span class="st">"counts"</span>,</span>
+<span>  tax_level    <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  fix_formula  <span class="op">=</span> <span class="st">"group + age + gender + BMI"</span>,</span>
+<span>  p_adj_method <span class="op">=</span> <span class="st">"holm"</span>,</span>
+<span>  prv_cut      <span class="op">=</span> <span class="fl">0.10</span>,</span>
+<span>  lib_cut      <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  pseudo_sens  <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  alpha        <span class="op">=</span> <span class="fl">0.05</span>,</span>
+<span>  n_cl         <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  verbose      <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre>
+</div>
+<p>The most important arguments are:</p>
+<ul>
+<li>
+<code>fix_formula</code>: the model. The first term,
+<code>group</code>, is the comparison of interest; <code>age</code>,
+<code>gender</code> and <code>BMI</code> are adjusted for. Their effects
+are estimated too, but we will only look at <code>group</code>.</li>
+<li>
+<code>tax_level = NULL</code>: use the rows as they are, because we
+already aggregated to genus. You could instead pass the species-level
+object with <code>tax_level = "genus"</code>.</li>
+<li>
+<code>p_adj_method = "holm"</code>: the multiple-testing correction.
+Holm is more conservative than Benjamini–Hochberg (<code>"BH"</code>)
+and is the ANCOM-BC2 default.</li>
+<li>
+<code>prv_cut = 0.10</code>: test only genera present in at least
+10% of the samples. Very rare genera have too little information to be
+tested reliably.</li>
+<li>
+<code>pseudo_sens = TRUE</code>: run the sensitivity analysis for
+the pseudo-count.</li>
+</ul>
+<p>In older versions of ANCOMBC the <code>assay.type</code> argument was
+called <code>assay_name</code>.</p>
+</section><section><h2 class="section-heading" id="reading-the-results">Reading the results<a class="anchor" aria-label="anchor" href="#reading-the-results"></a>
+</h2>
+<hr class="half-width">
+<p>The results are in <code>out$res</code>, a data frame with one row
+per genus and one set of columns per term in the model:</p>
+<div class="codewrapper sourceCode" id="cb10">
+<h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
+</h3>
+<pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="va">out</span><span class="op">$</span><span class="va">res</span></span>
+<span><span class="fu">dim</span><span class="op">(</span><span class="va">res</span><span class="op">)</span></span>
+<span><span class="fu">grep</span><span class="op">(</span><span class="st">"groupcirrhosis"</span>, <span class="fu">colnames</span><span class="op">(</span><span class="va">res</span><span class="op">)</span>, value <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre>
+</div>
+<div class="codewrapper">
+<h3 class="code-label">OUTPUT<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
+</h3>
+<pre class="output" tabindex="0"><code>[1] 87 41
+[1] "lfc_groupcirrhosis"         "se_groupcirrhosis"
+[3] "W_groupcirrhosis"           "p_groupcirrhosis"
+[5] "q_groupcirrhosis"           "diff_groupcirrhosis"
+[7] "passed_ss_groupcirrhosis"   "diff_robust_groupcirrhosis"</code></pre>
+</div>
+<p>For the <code>group</code> term, each column means:</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr>
+<th>Column</th>
+<th>Meaning</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>lfc_groupcirrhosis</code></td>
+<td>bias-corrected log-fold change (natural log) in cirrhosis relative
+to controls</td>
+</tr>
+<tr>
+<td><code>se_groupcirrhosis</code></td>
+<td>standard error of the log-fold change</td>
+</tr>
+<tr>
+<td><code>W_groupcirrhosis</code></td>
+<td>test statistic, <code>lfc / se</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>p_groupcirrhosis</code>, <code>q_groupcirrhosis</code>
+</td>
+<td>raw and adjusted p-value</td>
+</tr>
+<tr>
+<td><code>diff_groupcirrhosis</code></td>
+<td>
+<code>TRUE</code> if <code>q &lt; alpha</code>
+</td>
+</tr>
+<tr>
+<td><code>passed_ss_groupcirrhosis</code></td>
+<td>
+<code>TRUE</code> if the result did not depend on the
+pseudo-count</td>
+</tr>
+</tbody>
+</table>
+<p>We collect the columns we need in a tidier table, add a 95%
+confidence interval (LFC ± 1.96 × SE) and convert the log-fold change to
+a fold change with <code>exp()</code>:</p>
+<div class="codewrapper sourceCode" id="cb12">
+<h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
+</h3>
+<pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">da</span> <span class="op">&lt;-</span> <span class="va">res</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">transmute</span><span class="op">(</span>genus     <span class="op">=</span> <span class="va">taxon</span>,</span>
+<span>            lfc       <span class="op">=</span> <span class="va">lfc_groupcirrhosis</span>,</span>
+<span>            se        <span class="op">=</span> <span class="va">se_groupcirrhosis</span>,</span>
+<span>            q         <span class="op">=</span> <span class="va">q_groupcirrhosis</span>,</span>
+<span>            diff      <span class="op">=</span> <span class="va">diff_groupcirrhosis</span>,</span>
+<span>            passed_ss <span class="op">=</span> <span class="va">passed_ss_groupcirrhosis</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">mutate</span><span class="op">(</span>ci_low      <span class="op">=</span> <span class="va">lfc</span> <span class="op">-</span> <span class="fl">1.96</span> <span class="op">*</span> <span class="va">se</span>,</span>
+<span>         ci_high     <span class="op">=</span> <span class="va">lfc</span> <span class="op">+</span> <span class="fl">1.96</span> <span class="op">*</span> <span class="va">se</span>,</span>
+<span>         fold_change <span class="op">=</span> <span class="fu">exp</span><span class="op">(</span><span class="va">lfc</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">arrange</span><span class="op">(</span><span class="va">q</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">da</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">filter</span><span class="op">(</span><span class="va">diff</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">mutate</span><span class="op">(</span><span class="fu">across</span><span class="op">(</span><span class="fu">c</span><span class="op">(</span><span class="va">lfc</span>, <span class="va">se</span>, <span class="va">ci_low</span>, <span class="va">ci_high</span>, <span class="va">fold_change</span><span class="op">)</span>, \<span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu">round</span><span class="op">(</span><span class="va">x</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>         q <span class="op">=</span> <span class="fu">signif</span><span class="op">(</span><span class="va">q</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span></code></pre>
+</div>
+<div class="codewrapper">
+<h3 class="code-label">OUTPUT<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
+</h3>
+<pre class="output" tabindex="0"><code>                    genus   lfc   se       q diff passed_ss ci_low ci_high
+1             Veillonella  3.72 0.38 1.4e-16 TRUE      TRUE   2.97    4.47
+2           Streptococcus  2.76 0.35 1.6e-11 TRUE      TRUE   2.07    3.45
+3             Haemophilus  2.52 0.37 6.6e-09 TRUE      TRUE   1.81    3.24
+4         Aggregatibacter  2.18 0.32 4.9e-07 TRUE      TRUE   1.55    2.82
+5               Dialister -2.12 0.35 2.7e-06 TRUE     FALSE  -2.81   -1.42
+6     Limosilactobacillus  2.06 0.36 1.7e-05 TRUE      TRUE   1.35    2.77
+7       Ligilactobacillus  2.02 0.38 4.6e-05 TRUE      TRUE   1.27    2.76
+8          Lancefieldella  1.78 0.30 3.1e-04 TRUE      TRUE   1.19    2.37
+9                 Gemella  1.54 0.30 5.2e-04 TRUE      TRUE   0.95    2.13
+10            Barnesiella -1.47 0.37 7.9e-03 TRUE     FALSE  -2.19   -0.76
+11            Eubacterium -1.46 0.40 2.2e-02 TRUE      TRUE  -2.23   -0.68
+12             Hungatella  1.23 0.35 4.0e-02 TRUE      TRUE   0.55    1.91
+13             Klebsiella  1.47 0.42 4.3e-02 TRUE     FALSE   0.65    2.29
+14 Erysipelatoclostridium  1.23 0.35 4.6e-02 TRUE      TRUE   0.54    1.92
+15          Adlercreutzia -1.08 0.31 4.9e-02 TRUE      TRUE  -1.67   -0.48
+16              Alistipes -1.37 0.40 4.9e-02 TRUE     FALSE  -2.14   -0.59
+   fold_change
+1        41.40
+2        15.83
+3        12.49
+4         8.89
+5         0.12
+6         7.82
+7         7.50
+8         5.92
+9         4.68
+10        0.23
+11        0.23
+12        3.43
+13        4.34
+14        3.43
+15        0.34
+16        0.26</code></pre>
+</div>
+<p>Sixteen of the 87 tested genera have q &lt; 0.05. Most of them are
+<strong>more</strong> abundant in cirrhosis, and many are typical
+inhabitants of the mouth: <em>Veillonella</em>, <em>Streptococcus</em>,
+<em>Haemophilus</em>, <em>Aggregatibacter</em>, <em>Gemella</em> and
+<em>Lancefieldella</em>. This is the main finding of Qin <em>et
+al.</em>: in cirrhosis, oral bacteria invade the gut, probably helped by
+changes in bile acids and stomach acid.</p>
+<p>The fold changes are large. <em>Veillonella</em> has an LFC of about
+3.7, which means its bias-corrected abundance is about exp(3.7) ≈ 40
+times higher in cirrhosis than in controls, with a 95% CI from exp(3.0)
+≈ 20 to exp(4.5) ≈ 90 times.</p>
+<p>Not every significant genus passed the sensitivity analysis.
+<em>Dialister</em>, <em>Barnesiella</em>, <em>Klebsiella</em> and
+<em>Alistipes</em> have <code>passed_ss = FALSE</code>: their
+significance depends on the pseudo-count added to the zeros, so we
+should not report them as robust findings. Our final list is:</p>
+<div class="codewrapper sourceCode" id="cb14">
+<h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
+</h3>
+<pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">robust</span> <span class="op">&lt;-</span> <span class="va">da</span> <span class="op">|&gt;</span> <span class="fu">filter</span><span class="op">(</span><span class="va">diff</span>, <span class="va">passed_ss</span><span class="op">)</span></span>
+<span><span class="fu">nrow</span><span class="op">(</span><span class="va">robust</span><span class="op">)</span></span>
+<span><span class="va">robust</span><span class="op">$</span><span class="va">genus</span></span></code></pre>
+</div>
+<div class="codewrapper">
+<h3 class="code-label">OUTPUT<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
+</h3>
+<pre class="output" tabindex="0"><code>[1] 12
+ [1] "Veillonella"            "Streptococcus"          "Haemophilus"
+ [4] "Aggregatibacter"        "Limosilactobacillus"    "Ligilactobacillus"
+ [7] "Lancefieldella"         "Gemella"                "Eubacterium"
+[10] "Hungatella"             "Erysipelatoclostridium" "Adlercreutzia"         </code></pre>
+</div>
+<div id="what-differentially-abundant-means-here" class="callout">
+<div class="callout-square">
+<i class="callout-icon" data-feather="bell"></i>
+</div>
+<span class="callout-header">Callout</span>
+<div id="what-differentially-abundant-means-here" class="callout-inner">
+<h3 class="callout-title">What “differentially abundant” means here</h3>
+<div class="callout-content">
+<p>A genus is differentially abundant if its bias-corrected abundance
+differs between the groups, after adjusting for the covariates, more
+than expected by chance given the multiple testing. It does not mean
+that the genus is present only in one group, and it says nothing about
+cause: the oral bacteria may be a consequence of the disease rather than
+a cause of it.</p>
+</div>
+</div>
+</div>
+</section><section><h2 class="section-heading" id="comparing-statistics-with-abundance-patterns">Comparing statistics with abundance patterns<a class="anchor" aria-label="anchor" href="#comparing-statistics-with-abundance-patterns"></a>
+</h2>
+<hr class="half-width">
+<p>A results table is easy to over-interpret. Two plots help to check
+it: a forest plot of the effect sizes, and the abundances
+themselves.</p>
+<div class="section level3">
+<h3 id="forest-plot">Forest plot<a class="anchor" aria-label="anchor" href="#forest-plot"></a>
+</h3>
+<div class="codewrapper sourceCode" id="cb16">
+<h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
+</h3>
+<pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">da</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">filter</span><span class="op">(</span><span class="va">diff</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">mutate</span><span class="op">(</span>genus <span class="op">=</span> <span class="fu">reorder</span><span class="op">(</span><span class="va">genus</span>, <span class="va">lfc</span><span class="op">)</span>,</span>
+<span>         robust <span class="op">=</span> <span class="fu">ifelse</span><span class="op">(</span><span class="va">passed_ss</span>, <span class="st">"passed"</span>, <span class="st">"failed"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">ggplot</span><span class="op">(</span><span class="fu">aes</span><span class="op">(</span>x <span class="op">=</span> <span class="va">lfc</span>, y <span class="op">=</span> <span class="va">genus</span>, colour <span class="op">=</span> <span class="va">robust</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">geom_vline</span><span class="op">(</span>xintercept <span class="op">=</span> <span class="fl">0</span>, linetype <span class="op">=</span> <span class="st">"dashed"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">geom_errorbarh</span><span class="op">(</span><span class="fu">aes</span><span class="op">(</span>xmin <span class="op">=</span> <span class="va">ci_low</span>, xmax <span class="op">=</span> <span class="va">ci_high</span><span class="op">)</span>, height <span class="op">=</span> <span class="fl">0.2</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">geom_point</span><span class="op">(</span>size <span class="op">=</span> <span class="fl">2</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">scale_colour_manual</span><span class="op">(</span>values <span class="op">=</span> <span class="fu">c</span><span class="op">(</span>passed <span class="op">=</span> <span class="st">"black"</span>, failed <span class="op">=</span> <span class="st">"grey60"</span><span class="op">)</span>,</span>
+<span>                      name <span class="op">=</span> <span class="st">"Sensitivity\nanalysis"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">labs</span><span class="op">(</span>x <span class="op">=</span> <span class="st">"Log-fold change, cirrhosis vs control (95% CI)"</span>, y <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre>
+</div>
+<figure><img src="fig/04-forest-1.png" alt="Forest plot of log-fold changes with 95% confidence intervals for the 16 significant genera" style="display: block; margin: auto;" class="figure mx-auto d-block"></figure>
+</div>
+<div class="section level3">
+<h3 id="abundance-of-the-top-genera">Abundance of the top genera<a class="anchor" aria-label="anchor" href="#abundance-of-the-top-genera"></a>
+</h3>
+<p>To look at the abundances we use the centred log-ratio (CLR)
+transformation, which, like ANCOM-BC2, works on log abundances relative
+to the rest of the sample. We plot the four genera with the smallest
+q-values that passed the sensitivity analysis, and <em>Dialister</em>,
+which did not:</p>
+<div class="codewrapper sourceCode" id="cb17">
+<h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
+</h3>
+<pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">tse_genus</span> <span class="op">&lt;-</span> <span class="fu">transformAssay</span><span class="op">(</span><span class="va">tse_genus</span>, assay.type <span class="op">=</span> <span class="st">"counts"</span>,</span>
+<span>                            method <span class="op">=</span> <span class="st">"clr"</span>, pseudocount <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">show_genera</span> <span class="op">&lt;-</span> <span class="fu">c</span><span class="op">(</span><span class="fu">head</span><span class="op">(</span><span class="va">robust</span><span class="op">$</span><span class="va">genus</span>, <span class="fl">4</span><span class="op">)</span>, <span class="st">"Dialister"</span><span class="op">)</span></span>
+<span><span class="fu">plotBoxplot</span><span class="op">(</span><span class="va">tse_genus</span><span class="op">[</span><span class="va">show_genera</span>, <span class="op">]</span>, assay.type <span class="op">=</span> <span class="st">"clr"</span>,</span>
+<span>            x <span class="op">=</span> <span class="st">"group"</span>, facet.by <span class="op">=</span> <span class="st">"rownames"</span>, fill.by <span class="op">=</span> <span class="st">"group"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">labs</span><span class="op">(</span>x <span class="op">=</span> <span class="cn">NULL</span>, y <span class="op">=</span> <span class="st">"CLR abundance"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">theme</span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span></code></pre>
+</div>
+<figure><img src="fig/04-boxplot-genera-1.png" alt="Box plots of CLR abundance by group for Veillonella, Streptococcus, Haemophilus, Aggregatibacter and Dialister" style="display: block; margin: auto;" class="figure mx-auto d-block"></figure><p>The four robust genera show clear shifts between the groups. The
+cluster of points at the bottom of several panels are the samples where
+the genus was not detected: after adding the pseudo-count, all zeros end
+up at the same low value. <em>Dialister</em> looks different from the
+others: its two groups overlap almost completely, and both have a mix of
+zeros and high values. How many zeros does each genus have?</p>
+<div class="codewrapper sourceCode" id="cb18">
+<h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
+</h3>
+<pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">assay</span><span class="op">(</span><span class="va">tse_genus</span>, <span class="st">"counts"</span><span class="op">)</span><span class="op">[</span><span class="va">show_genera</span>, <span class="op">]</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">as.data.frame</span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">tibble</span><span class="fu">::</span><span class="fu">rownames_to_column</span><span class="op">(</span><span class="st">"genus"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">pivot_longer</span><span class="op">(</span><span class="op">-</span><span class="va">genus</span>, names_to <span class="op">=</span> <span class="st">"sample"</span>, values_to <span class="op">=</span> <span class="st">"count"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">mutate</span><span class="op">(</span>group <span class="op">=</span> <span class="va">tse_genus</span><span class="op">$</span><span class="va">group</span><span class="op">[</span><span class="fu">match</span><span class="op">(</span><span class="va">sample</span>, <span class="fu">colnames</span><span class="op">(</span><span class="va">tse_genus</span><span class="op">)</span><span class="op">)</span><span class="op">]</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">group_by</span><span class="op">(</span><span class="va">genus</span>, <span class="va">group</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">summarise</span><span class="op">(</span>percent_zero <span class="op">=</span> <span class="fu">round</span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="fu">mean</span><span class="op">(</span><span class="va">count</span> <span class="op">==</span> <span class="fl">0</span><span class="op">)</span><span class="op">)</span>, .groups <span class="op">=</span> <span class="st">"drop"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">pivot_wider</span><span class="op">(</span>names_from <span class="op">=</span> <span class="va">group</span>, values_from <span class="op">=</span> <span class="va">percent_zero</span><span class="op">)</span></span></code></pre>
+</div>
+<div class="codewrapper">
+<h3 class="code-label">OUTPUT<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
+</h3>
+<pre class="output" tabindex="0"><code># A tibble: 5 x 3
+  genus           control cirrhosis
+  &lt;chr&gt;             &lt;dbl&gt;     &lt;dbl&gt;
+1 Aggregatibacter      94        53
+2 Dialister            61        51
+3 Haemophilus          32         4
+4 Streptococcus         5         1
+5 Veillonella          30         0</code></pre>
+</div>
+<p>Zeros alone do not make a result fragile. <em>Aggregatibacter</em> is
+absent from 94% of the controls, but it is present at high abundance in
+many patients, so the difference between groups is large whatever value
+the zeros are given. <em>Dialister</em> has zeros in more than half of
+the samples of both groups, and they pull in opposite directions: where
+it is present it is much less abundant in patients, but it is absent
+from more controls than patients. How large the estimated difference is
+therefore depends on the value given to the zeros, and when the
+sensitivity analysis tries other pseudo-counts the result does not
+hold.</p>
+<div id="challenge-1-what-do-the-covariates-change" class="callout challenge">
+<div class="callout-square">
+<i class="callout-icon" data-feather="zap"></i>
+</div>
+<span class="callout-header">Challenge</span>
+<div id="challenge-1-what-do-the-covariates-change" class="callout-inner">
+<h3 class="callout-title">Challenge 1: What do the covariates
+change?</h3>
+<div class="callout-content">
+<p>Re-run ANCOM-BC2 with <code>fix_formula = "group"</code>, without
+adjusting for age, sex and BMI. Which genera are robust hits in one
+analysis but not in the other?</p>
+</div>
+</div>
+</div>
+<div id="accordionSolution1" class="accordion challenge-accordion accordion-flush">
+<div class="accordion-item">
+<button class="accordion-button solution-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSolution1" aria-expanded="false" aria-controls="collapseSolution1">
+  <h4 class="accordion-header" id="headingSolution1"> Show me the solution </h4>
+</button>
+<div id="collapseSolution1" class="accordion-collapse collapse" data-bs-parent="#accordionSolution1" aria-labelledby="headingSolution1">
+<div class="accordion-body">
+<div class="codewrapper sourceCode" id="cb20">
+<h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
+</h3>
+<pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">set.seed</span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
+<span><span class="va">out_unadj</span> <span class="op">&lt;-</span> <span class="fu">ancombc2</span><span class="op">(</span>data <span class="op">=</span> <span class="va">tse_genus</span>, assay.type <span class="op">=</span> <span class="st">"counts"</span>, tax_level <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>                      fix_formula <span class="op">=</span> <span class="st">"group"</span>, p_adj_method <span class="op">=</span> <span class="st">"holm"</span>,</span>
+<span>                      prv_cut <span class="op">=</span> <span class="fl">0.10</span>, lib_cut <span class="op">=</span> <span class="fl">0</span>, pseudo_sens <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>                      alpha <span class="op">=</span> <span class="fl">0.05</span>, n_cl <span class="op">=</span> <span class="fl">1</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">robust_unadj</span> <span class="op">&lt;-</span> <span class="va">out_unadj</span><span class="op">$</span><span class="va">res</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">filter</span><span class="op">(</span><span class="va">diff_groupcirrhosis</span>, <span class="va">passed_ss_groupcirrhosis</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">pull</span><span class="op">(</span><span class="va">taxon</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">setdiff</span><span class="op">(</span><span class="va">robust_unadj</span>, <span class="va">robust</span><span class="op">$</span><span class="va">genus</span><span class="op">)</span>   <span class="co"># only without adjustment</span></span>
+<span><span class="fu">setdiff</span><span class="op">(</span><span class="va">robust</span><span class="op">$</span><span class="va">genus</span>, <span class="va">robust_unadj</span><span class="op">)</span>   <span class="co"># only with adjustment</span></span></code></pre>
+</div>
+<div class="codewrapper">
+<h3 class="code-label">OUTPUT<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
+</h3>
+<pre class="output" tabindex="0"><code>[1] "Campylobacter"     "Actinomyces"       "Rothia"
+[4] "Selenomonas"       "Mogibacterium"     "Lachnoclostridium"
+[7] "Tyzzerella"
+character(0)</code></pre>
+</div>
+<p>All 12 robust genera of the adjusted model are also found without
+adjustment, but the unadjusted model adds seven more, several of them
+also typical of the mouth (<em>Actinomyces</em>, <em>Rothia</em>,
+<em>Selenomonas</em>, <em>Campylobacter</em>). Part of their difference
+between groups can be explained by age, sex or BMI, so they no longer
+reach significance once these are in the model. Covariates should be
+chosen before looking at the results, based on what could confound the
+comparison, not on which model gives more hits.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section><section><h2 class="section-heading" id="what-are-these-bacteria-doing-a-functional-follow-up">What are these bacteria doing? A functional follow-up<a class="anchor" aria-label="anchor" href="#what-are-these-bacteria-doing-a-functional-follow-up"></a>
+</h2>
+<hr class="half-width">
+<p>The taxonomic results tell us <em>who</em> changes. HUMAnN can tell
+us something about <em>what</em> they might be doing, because its
+stratified rows (<code>PATHWAY|g__Genus.s__species</code>) split each
+pathway’s abundance by the species that contribute to it. We use them to
+ask which pathways the robust genera contribute to, and whether those
+pathways change too.</p>
+<p>This is a descriptive follow-up, not a second formal DA analysis.
+HUMAnN pathway abundances are not counts, and most pathways are shared
+by many species, so a pathway can change simply because the community
+composition changed. Testing all pathways at once would give hundreds of
+“significant” pathways that mostly repeat the taxonomic result.</p>
+<p>We look at three pathways:</p>
+<div class="codewrapper sourceCode" id="cb22">
+<h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
+</h3>
+<pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">path</span> <span class="op">&lt;-</span> <span class="va">dat</span><span class="op">$</span><span class="va">pathways</span></span>
+<span></span>
+<span><span class="va">focus</span> <span class="op">&lt;-</span> <span class="fu">c</span><span class="op">(</span><span class="st">"P125-PWY"</span>             <span class="op">=</span> <span class="st">"(R,R)-butanediol biosynthesis"</span>,</span>
+<span>           <span class="st">"HEME-BIOSYNTHESIS-II"</span> <span class="op">=</span> <span class="st">"heme biosynthesis (aerobic)"</span>,</span>
+<span>           <span class="st">"PWY-6737"</span>             <span class="op">=</span> <span class="st">"starch degradation V"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">strat</span> <span class="op">&lt;-</span> <span class="va">path</span><span class="op">[</span><span class="fu">grepl</span><span class="op">(</span><span class="st">"|"</span>, <span class="fu">rownames</span><span class="op">(</span><span class="va">path</span><span class="op">)</span>, fixed <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, <span class="op">]</span></span>
+<span><span class="fu">dim</span><span class="op">(</span><span class="va">strat</span><span class="op">)</span></span>
+<span><span class="fu">head</span><span class="op">(</span><span class="fu">rownames</span><span class="op">(</span><span class="va">strat</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span></code></pre>
+</div>
+<div class="codewrapper">
+<h3 class="code-label">OUTPUT<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
+</h3>
+<pre class="output" tabindex="0"><code>[1] 285 237
+[1] "PWY-6737: starch degradation V|unclassified"
+[2] "PWY-6737: starch degradation V|g__Bacteroides.s__Bacteroides_eggerthii"
+[3] "PWY-6737: starch degradation V|g__Bacteroides.s__Bacteroides_finegoldii"</code></pre>
+</div>
+<div class="section level3">
+<h3 id="who-contributes-to-each-pathway">Who contributes to each pathway?<a class="anchor" aria-label="anchor" href="#who-contributes-to-each-pathway"></a>
+</h3>
+<p>For each pathway and group we sum the contributions of each genus and
+calculate its share of the pathway. Genera that never contribute more
+than 5% are grouped as “Other”:</p>
+<div class="codewrapper sourceCode" id="cb24">
+<h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
+</h3>
+<pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">contrib</span> <span class="op">&lt;-</span> <span class="fu">meltSE</span><span class="op">(</span><span class="va">strat</span>, assay.type <span class="op">=</span> <span class="st">"abundance"</span>, add.col <span class="op">=</span> <span class="st">"group"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">mutate</span><span class="op">(</span>pathway <span class="op">=</span> <span class="va">focus</span><span class="op">[</span><span class="fu">sub</span><span class="op">(</span><span class="st">":.*$"</span>, <span class="st">""</span>, <span class="va">FeatureID</span><span class="op">)</span><span class="op">]</span>,</span>
+<span>         genus   <span class="op">=</span> <span class="fu">sub</span><span class="op">(</span><span class="st">"^.*\\|g__([^.]+)\\..*$"</span>, <span class="st">"\\1"</span>, <span class="va">FeatureID</span><span class="op">)</span>,</span>
+<span>         genus   <span class="op">=</span> <span class="fu">ifelse</span><span class="op">(</span><span class="fu">grepl</span><span class="op">(</span><span class="st">"|unclassified"</span>, <span class="va">FeatureID</span>, fixed <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>                          <span class="st">"unclassified"</span>, <span class="va">genus</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">group_by</span><span class="op">(</span><span class="va">pathway</span>, <span class="va">group</span>, <span class="va">genus</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">summarise</span><span class="op">(</span>abundance <span class="op">=</span> <span class="fu">sum</span><span class="op">(</span><span class="va">abundance</span><span class="op">)</span>, .groups <span class="op">=</span> <span class="st">"drop"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">group_by</span><span class="op">(</span><span class="va">pathway</span>, <span class="va">group</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">mutate</span><span class="op">(</span>share <span class="op">=</span> <span class="va">abundance</span> <span class="op">/</span> <span class="fu">sum</span><span class="op">(</span><span class="va">abundance</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">group_by</span><span class="op">(</span><span class="va">pathway</span>, <span class="va">genus</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">mutate</span><span class="op">(</span>genus <span class="op">=</span> <span class="fu">ifelse</span><span class="op">(</span><span class="fu">max</span><span class="op">(</span><span class="va">share</span><span class="op">)</span> <span class="op">&lt;</span> <span class="fl">0.05</span>, <span class="st">"Other"</span>, <span class="va">genus</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">group_by</span><span class="op">(</span><span class="va">pathway</span>, <span class="va">group</span>, <span class="va">genus</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">summarise</span><span class="op">(</span>share <span class="op">=</span> <span class="fu">sum</span><span class="op">(</span><span class="va">share</span><span class="op">)</span>, .groups <span class="op">=</span> <span class="st">"drop"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># grey for "Other" and "unclassified", a colour for each named genus</span></span>
+<span><span class="va">genera</span> <span class="op">&lt;-</span> <span class="fu">setdiff</span><span class="op">(</span><span class="fu">sort</span><span class="op">(</span><span class="fu">unique</span><span class="op">(</span><span class="va">contrib</span><span class="op">$</span><span class="va">genus</span><span class="op">)</span><span class="op">)</span>, <span class="fu">c</span><span class="op">(</span><span class="st">"Other"</span>, <span class="st">"unclassified"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">fill_colours</span> <span class="op">&lt;-</span> <span class="fu">c</span><span class="op">(</span><span class="fu">setNames</span><span class="op">(</span><span class="fu">scales</span><span class="fu">::</span><span class="fu">hue_pal</span><span class="op">(</span><span class="op">)</span><span class="op">(</span><span class="fu">length</span><span class="op">(</span><span class="va">genera</span><span class="op">)</span><span class="op">)</span>, <span class="va">genera</span><span class="op">)</span>,</span>
+<span>                  Other <span class="op">=</span> <span class="st">"grey75"</span>, unclassified <span class="op">=</span> <span class="st">"grey45"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">ggplot</span><span class="op">(</span><span class="va">contrib</span>, <span class="fu">aes</span><span class="op">(</span>x <span class="op">=</span> <span class="va">group</span>, y <span class="op">=</span> <span class="va">share</span>, fill <span class="op">=</span> <span class="va">genus</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">geom_col</span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">scale_fill_manual</span><span class="op">(</span>values <span class="op">=</span> <span class="va">fill_colours</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">facet_wrap</span><span class="op">(</span><span class="op">~</span> <span class="va">pathway</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">labs</span><span class="op">(</span>x <span class="op">=</span> <span class="cn">NULL</span>, y <span class="op">=</span> <span class="st">"Share of pathway abundance"</span>, fill <span class="op">=</span> <span class="st">"Genus"</span><span class="op">)</span></span></code></pre>
+</div>
+<figure><img src="fig/04-contributions-1.png" alt="Stacked bar plots of the share of each pathway contributed by each genus, in controls and cirrhosis" style="display: block; margin: auto;" class="figure mx-auto d-block"></figure><p>The picture links back to the DA results. In cirrhosis,
+<em>Streptococcus</em> contributes almost all of the butanediol
+biosynthesis pathway, and <em>Veillonella</em> becomes the largest
+contributor to aerobic heme biosynthesis, while in controls
+<em>Escherichia</em> contributes most of it. Starch degradation, in
+contrast, comes mostly from typical commensal gut bacteria such as
+<em>Bacteroides</em>, <em>Faecalibacterium</em> and <em>Roseburia</em>,
+in both groups.</p>
+</div>
+<div class="section level3">
+<h3 id="do-the-pathways-change">Do the pathways change?<a class="anchor" aria-label="anchor" href="#do-the-pathways-change"></a>
+</h3>
+<p>Finally we compare the community-level (unstratified) abundance of
+the three pathways between groups, again on the CLR scale:</p>
+<div class="codewrapper sourceCode" id="cb25">
+<h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
+</h3>
+<pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">unstrat</span> <span class="op">&lt;-</span> <span class="va">path</span><span class="op">[</span><span class="op">!</span><span class="fu">grepl</span><span class="op">(</span><span class="st">"|"</span>, <span class="fu">rownames</span><span class="op">(</span><span class="va">path</span><span class="op">)</span>, fixed <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">&amp;</span></span>
+<span>                  <span class="op">!</span><span class="fu">rownames</span><span class="op">(</span><span class="va">path</span><span class="op">)</span> <span class="op">%in%</span> <span class="fu">c</span><span class="op">(</span><span class="st">"UNMAPPED"</span>, <span class="st">"UNINTEGRATED"</span><span class="op">)</span>, <span class="op">]</span></span>
+<span><span class="va">unstrat</span> <span class="op">&lt;-</span> <span class="fu">transformAssay</span><span class="op">(</span><span class="va">unstrat</span>, assay.type <span class="op">=</span> <span class="st">"abundance"</span>,</span>
+<span>                          method <span class="op">=</span> <span class="st">"clr"</span>, pseudocount <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">rows</span> <span class="op">&lt;-</span> <span class="fu">match</span><span class="op">(</span><span class="fu">names</span><span class="op">(</span><span class="va">focus</span><span class="op">)</span>, <span class="fu">sub</span><span class="op">(</span><span class="st">":.*$"</span>, <span class="st">""</span>, <span class="fu">rownames</span><span class="op">(</span><span class="va">unstrat</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">unstrat_focus</span> <span class="op">&lt;-</span> <span class="va">unstrat</span><span class="op">[</span><span class="va">rows</span>, <span class="op">]</span></span>
+<span><span class="fu">rownames</span><span class="op">(</span><span class="va">unstrat_focus</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="va">focus</span></span>
+<span></span>
+<span><span class="fu">plotBoxplot</span><span class="op">(</span><span class="va">unstrat_focus</span>, assay.type <span class="op">=</span> <span class="st">"clr"</span>,</span>
+<span>            x <span class="op">=</span> <span class="st">"group"</span>, facet.by <span class="op">=</span> <span class="st">"rownames"</span>, fill.by <span class="op">=</span> <span class="st">"group"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">labs</span><span class="op">(</span>x <span class="op">=</span> <span class="cn">NULL</span>, y <span class="op">=</span> <span class="st">"CLR abundance"</span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu">theme</span><span class="op">(</span>legend.position <span class="op">=</span> <span class="st">"none"</span><span class="op">)</span></span></code></pre>
+</div>
+<figure><img src="fig/04-pathway-boxplot-1.png" alt="Box plots of CLR pathway abundance by group for butanediol biosynthesis, heme biosynthesis and starch degradation" style="display: block; margin: auto;" class="figure mx-auto d-block"></figure><p>The two pathways driven by the oral genera are higher in cirrhosis,
+and starch degradation, a typical function of the commensal gut
+community, is lower. Together with the taxonomic results this suggests a
+functional shift as well as a change in who is present. It remains a
+hypothesis: HUMAnN infers pathways from genes in the reads, so a higher
+pathway abundance means more of the genes are present, not that the
+pathway is more active.</p>
+<div id="challenge-2-put-a-result-into-words" class="callout challenge">
+<div class="callout-square">
+<i class="callout-icon" data-feather="zap"></i>
+</div>
+<span class="callout-header">Challenge</span>
+<div id="challenge-2-put-a-result-into-words" class="callout-inner">
+<h3 class="callout-title">Challenge 2: Put a result into words</h3>
+<div class="callout-content">
+<p>Find the row for <em>Streptococcus</em> in <code>da</code>. Write one
+sentence that reports its result in a way you could put in a paper,
+including the fold change and its 95% confidence interval.</p>
+</div>
+</div>
+</div>
+<div id="accordionSolution2" class="accordion challenge-accordion accordion-flush">
+<div class="accordion-item">
+<button class="accordion-button solution-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSolution2" aria-expanded="false" aria-controls="collapseSolution2">
+  <h4 class="accordion-header" id="headingSolution2"> Show me the solution </h4>
+</button>
+<div id="collapseSolution2" class="accordion-collapse collapse" data-bs-parent="#accordionSolution2" aria-labelledby="headingSolution2">
+<div class="accordion-body">
+<div class="codewrapper sourceCode" id="cb26">
+<h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
+</h3>
+<pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">da</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">filter</span><span class="op">(</span><span class="va">genus</span> <span class="op">==</span> <span class="st">"Streptococcus"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">mutate</span><span class="op">(</span>fc <span class="op">=</span> <span class="fu">exp</span><span class="op">(</span><span class="va">lfc</span><span class="op">)</span>, fc_low <span class="op">=</span> <span class="fu">exp</span><span class="op">(</span><span class="va">ci_low</span><span class="op">)</span>, fc_high <span class="op">=</span> <span class="fu">exp</span><span class="op">(</span><span class="va">ci_high</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">select</span><span class="op">(</span><span class="va">genus</span>, <span class="va">lfc</span>, <span class="va">fc</span>, <span class="va">fc_low</span>, <span class="va">fc_high</span>, <span class="va">q</span>, <span class="va">passed_ss</span><span class="op">)</span></span></code></pre>
+</div>
+<div class="codewrapper">
+<h3 class="code-label">OUTPUT<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
+</h3>
+<pre class="output" tabindex="0"><code>          genus      lfc       fc   fc_low  fc_high           q passed_ss
+1 Streptococcus 2.762133 15.83359 7.930371 31.61296 1.64035e-11      TRUE</code></pre>
+</div>
+<p>For example: “After adjusting for age, sex and BMI,
+<em>Streptococcus</em> was about 16 times more abundant in patients with
+cirrhosis than in controls (bias-corrected fold change 15.8, 95% CI
+7.9–31.6; Holm-adjusted q &lt; 0.001; ANCOM-BC2), and the result was
+robust to the choice of pseudo-count.” Reporting the effect size and its
+CI tells the reader how big the difference is, which a q-value alone
+does not.</p>
 </div>
 </div>
 </div>
@@ -2246,13 +3108,31 @@ false-discovery-rate-adjusted values</li>
 <div class="callout-inner">
 <div class="callout-content">
 <ul>
-<li>FIXME: key points to be added</li>
+<li>Define the DA question before the analysis: the taxonomic level, the
+groups, the reference group and the covariates.</li>
+<li>Relative abundances are compositional and samples have different
+sampling fractions, so DA methods such as ANCOM-BC2 correct for these
+biases instead of comparing proportions directly.</li>
+<li>Report the log-fold change with its confidence interval together
+with the adjusted q-value, and treat results that fail the pseudo-count
+sensitivity analysis as not robust.</li>
+<li>Check the statistical results against plots of the abundances,
+especially for taxa with many zeros.</li>
+<li>HUMAnN’s stratified pathways link differentially abundant taxa to
+the functions they may carry out, but these links are descriptive and
+generate hypotheses.</li>
 </ul>
 </div>
 </div>
-</div></section><section id="aio-05-wrap-up"><p>Content from <a href="05-wrap-up.html">Wrap up</a></p>
+</div>
+<!--
+Place links that you need to refer to multiple times across pages here. Delete
+any links that you are not going to use.
+ -->
+</div>
+</section></section><section id="aio-05-wrap-up"><p>Content from <a href="05-wrap-up.html">Wrap up</a></p>
 <hr>
-<p>Last updated on 2026-11-02 |
+<p>Last updated on 2026-11-03 |
 
         <a href="https://github.com/melbournebioinformatics/workbench-template-rmd/edit/main/episodes/05-wrap-up.Rmd" class="external-link">Edit this page <i aria-hidden="true" data-feather="edit"></i></a></p>
 <div class="text-end">
@@ -2449,9 +3329,9 @@ any links that you are not going to use.
   "creativeWorkStatus": "active",
   "url": "melbournebioinformatics.github.io/uom-varnish/aio.html",
   "identifier": "melbournebioinformatics.github.io/uom-varnish/aio.html",
-  "dateCreated": "2026-11-02",
-  "dateModified": "2026-11-02",
-  "datePublished": "2026-11-02"
+  "dateCreated": "2026-11-03",
+  "dateModified": "2026-11-03",
+  "datePublished": "2026-11-03"
 }
 
   </script><script>

@@ -351,14 +351,155 @@
         <h1>Instructor Notes</h1>
         
 
-<p>This is a placeholder file. Please add content here.</p>
+<section><h2 class="section-heading" id="data-used-on-day-2">Data used on Day 2<a class="anchor" aria-label="anchor" href="#data-used-on-day-2"></a>
+</h2>
+<hr class="half-width">
+<p>The files in <code>episodes/data/</code> were made from the organiser
+run of nf-core/taxprofiler 2.0.1 on the <strong>full</strong> five Sun
+<em>et al.</em> (2021) gut samples (about 10 million read pairs each),
+run on 27 October 2026. Day 1 participants run the same pipeline on a
+100,000-pair subset
+(<code>Nectar_setup/make_participant_subset.sh</code>).</p>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr>
+<th>Profiler</th>
+<th>Version</th>
+<th>Database</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>MetaPhlAn</td>
+<td>4.1.1</td>
+<td><code>mpa_vJun23_CHOCOPhlAnSGB_202403</code></td>
+</tr>
+<tr>
+<td>mOTUs</td>
+<td>3.1.0</td>
+<td>
+<code>db_mOTU_v3.1.0</code>, read counts (<code>-c</code>)</td>
+</tr>
+<tr>
+<td>Kraken2 / Bracken</td>
+<td>2.1.5 / 3.0.1</td>
+<td>
+<code>k2_standard_08_GB_20260626</code> (Standard-8, capped at 8
+GB)</td>
+</tr>
+<tr>
+<td>sylph / sylph-tax</td>
+<td>0.7.0 / 1.2.0</td>
+<td>GTDB R220, <code>c200</code>
+</td>
+</tr>
+<tr>
+<td>Taxpasta</td>
+<td>0.7.0</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>Pre-processing: fastp and FastQC only. Host removal was off
+(simulated reads).</p>
+<div class="section level3">
+<h3 id="why-the-lesson-does-not-use-the-taxpasta-tables-directly">Why the lesson does not use the Taxpasta tables directly<a class="anchor" aria-label="anchor" href="#why-the-lesson-does-not-use-the-taxpasta-tables-directly"></a>
+</h3>
+<p>In this run Taxpasta was called without a taxonomy, so
+<code>taxpasta/*.tsv</code> contain taxonomy IDs only, with all ranks
+mixed in one table. Taxpasta 0.7.0 also does not support sylph. The
+script in <code>data-prep/</code> reads each profiler’s per-sample
+reports instead (they contain names) and writes species-level tables
+with the same layout.</p>
+<p>To get Taxpasta tables with names straight from the pipeline, add
+these to the Day 1 parameters (they need an NCBI taxdump folder with
+<code>nodes.dmp</code>, <code>names.dmp</code> and
+<code>merged.dmp</code>):</p>
+<pre><code><span><span class="op">-</span><span class="op">-</span><span class="va">taxpasta_taxonomy_dir</span> <span class="op">/</span><span class="va">path</span><span class="op">/</span><span class="va">to</span><span class="op">/</span><span class="va">ncbi_taxdump</span></span>
+<span><span class="op">-</span><span class="op">-</span><span class="va">taxpasta_add_name</span></span>
+<span><span class="op">-</span><span class="op">-</span><span class="va">taxpasta_add_rank</span></span>
+<span><span class="op">-</span><span class="op">-</span><span class="va">taxpasta_add_lineage</span></span></code></pre>
+</div>
+<div class="section level3">
+<h3 id="regenerating-the-data">Regenerating the data<a class="anchor" aria-label="anchor" href="#regenerating-the-data"></a>
+</h3>
+<p><code>--truth</code> is the folder with the Sun <em>et al.</em>
+tables <code>5_gut_taxonomic_abd.txt</code> and
+<code>5_gut_sequence_abd.txt</code>.</p>
+<div class="codewrapper sourceCode" id="cb2">
+<h3 class="code-label">BASH<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
+</h3>
+<pre class="sourceCode bash" tabindex="0"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" tabindex="-1" aria-label="code-block-2-1"></a><span class="ex">python3</span> data-prep/prepare_day2_data.py <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1" aria-label="code-block-2-2"></a>    <span class="at">--results</span>  /path/to/taxprofiler_results <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1" aria-label="code-block-2-3"></a>    <span class="at">--truth</span>    /path/to/truth <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1" aria-label="code-block-2-4"></a>    <span class="at">--cami</span>     /path/to/sun2021-cami-profiles/taxonomic_abd <span class="dt">\</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1" aria-label="code-block-2-5"></a>    <span class="at">--gtdb-map</span> data-prep/species_map_gtdb_r220.tsv <span class="dt">\</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1" aria-label="code-block-2-6"></a>    <span class="at">--out</span>      episodes/data</span></code></pre>
+</div>
+<p>The CAMI profiles are from <a href="https://github.com/shenwei356/sun2021-cami-profiles" class="external-link uri">https://github.com/shenwei356/sun2021-cami-profiles</a>.
+They provide the NCBI taxonomy IDs of the truth species (NCBI taxonomy
+of 2021-12-06). If you regenerate the data with different pipeline
+results, check the numbers quoted in the text of episodes 02 and 03.</p>
+</div>
+<div class="section level3">
+<h3 id="gtdb-names-of-the-truth-species">GTDB names of the truth species<a class="anchor" aria-label="anchor" href="#gtdb-names-of-the-truth-species"></a>
+</h3>
+<p>The truth species were first mapped to GTDB R220 by name (the GTDB
+species of each NCBI type strain): column
+<code>gtdb_r220_species_by_name</code> in
+<code>ncbi_to_gtdb_r220.tsv</code>. For 12 species, GTDB splits the NCBI
+species, and sylph reported the simulated genome in a sibling GTDB
+species (e.g. <em>Fusobacterium nucleatum</em> → <em>Fusobacterium
+animalis</em>). These 12 were reassigned when sylph’s species had the
+same presence pattern across the five samples, abundances that differed
+by at most 0.15 percentage points in total, and ANI ≥ 97% (column
+<code>gtdb_r220_species</code>, <code>evidence</code> = “genome”).
+Because this uses sylph’s output, mention it when discussing sylph’s
+near-perfect scores (Episode 03, “Is sylph really that good?”). A fully
+independent check would extract the simulated genome accessions from the
+read names and look them up in the GTDB R220 metadata.</p>
+</div>
+</section><section><h2 class="section-heading" id="key-results-to-expect-in-episode-03">Key results to expect in Episode 03<a class="anchor" aria-label="anchor" href="#key-results-to-expect-in-episode-03"></a>
+</h2>
+<hr class="half-width">
+<ul>
+<li>Bracken reports ~500–660 species per sample (truth: 56–76).
+Precision 0.11 without a threshold, 0.93 at 0.1%.</li>
+<li>Mean Bray–Curtis to truth: Bracken 0.09 (sequence) vs 0.21
+(taxonomic); MetaPhlAn 0.17 vs 0.05; mOTUs 0.16 vs 0.03; sylph 0.02 /
+0.01 against its matching truth.</li>
+<li>Missed species: MetaPhlAn misses <em>Rothia dentocariosa</em>
+(reported as the unnamed <code>Rothia SGB49305</code>); Bracken misses
+<em>Faecalitalea cylindroides</em> (no <em>Faecalitalea</em> in the
+Standard-8 database).</li>
+<li>PERMANOVA on Bray–Curtis: sample R² ≈ 0.95, method R² ≈ 0.045 (p =
+0.001); <code>betadisper</code> not significant.</li>
+<li>Shannon index: taxonomic and sequence truth are similar here (paired
+Wilcoxon p ≈ 0.81), unlike in Sun <em>et al.</em>. With n = 5 pairs, the
+smallest possible exact p-value is 0.0625.</li>
+</ul></section><section><h2 class="section-heading" id="common-problems">Common problems<a class="anchor" aria-label="anchor" href="#common-problems"></a>
+</h2>
+<hr class="half-width">
+<ul>
+<li>
+<code>left_join()</code> error <em>“Input includes an object that is
+not ‘SummarizedExperiment’”</em>: <code>mia</code> was loaded after
+<code>dplyr</code>. Load <code>mia</code> first, or use
+<code>dplyr::left_join()</code>.</li>
+<li>File-not-found errors: the RStudio project must be the folder that
+<strong>contains</strong> <code>data/</code>. Episode 3 reads from
+<code>/data/workshop_data/day2_ep3</code> (the workshop RStudio server)
+by default; remote participants set <code>data_dir &lt;- "data"</code>.
+When the website is built, a hidden chunk falls back to
+<code>episodes/data/</code>.</li>
+</ul>
 <!--
 Place links that you need to refer to multiple times across pages here. Delete
 any links that you are not going to use.
- -->
-
-
-      <section id="aggregate-instructor-notes"></section>
+ --></section><section id="aggregate-instructor-notes"></section>
 </div>
     </main>
 </div>
@@ -407,9 +548,9 @@ any links that you are not going to use.
   "creativeWorkStatus": "active",
   "url": "melbournebioinformatics.github.io/uom-varnish/instructor-notes.html",
   "identifier": "melbournebioinformatics.github.io/uom-varnish/instructor-notes.html",
-  "dateCreated": "2026-11-02",
-  "dateModified": "2026-11-02",
-  "datePublished": "2026-11-02"
+  "dateCreated": "2026-11-03",
+  "dateModified": "2026-11-03",
+  "datePublished": "2026-11-03"
 }
 
   </script><script>

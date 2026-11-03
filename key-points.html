@@ -354,11 +354,12 @@
 <hr class="half-width">
 <ul>
 <li>nf-core/taxprofiler ran four profilers on the same reads, and
-Taxpasta standardised their outputs into comparable tables.</li>
+Taxpasta and sylph-tax standardised their outputs into comparable
+tables.</li>
 <li>Our samples have a known composition (the ground truth), so we can
 judge how accurate each profiler is.</li>
-<li>Today’s analysis starts from the merged Taxpasta tables and the
-sample metadata.</li>
+<li>Today’s analysis uses the profiles of the full samples, not the
+subset from Day 1.</li>
 </ul></section><section id="02-profilers-concepts"><h2 class="section-heading"><a href="02-profilers-concepts.html">Comparing taxonomic profilers: concepts</a></h2>
 <hr class="half-width">
 <ul>
@@ -368,7 +369,7 @@ affect the results.</li>
 <li>Sequence abundance (fraction of reads) and taxonomic abundance
 (fraction of cells) differ systematically because genome sizes
 differ.</li>
-<li>Containment ANI estimates how much of a reference genome in
+<li>Containment ANI estimates how much of a reference genome is
 “contained” in the sample.</li>
 <li>Choose the profiler and abundance type that match your research
 question, and use agreement between tools as supporting evidence.</li>
@@ -394,7 +395,19 @@ variation. Don’t mix profilers or databases within one analysis.</li>
 </ul></section><section id="04-differential-abundance"><h2 class="section-heading"><a href="04-differential-abundance.html">Differential abundance testing</a></h2>
 <hr class="half-width">
 <ul>
-<li>FIXME: key points to be added</li>
+<li>Define the DA question before the analysis: the taxonomic level, the
+groups, the reference group and the covariates.</li>
+<li>Relative abundances are compositional and samples have different
+sampling fractions, so DA methods such as ANCOM-BC2 correct for these
+biases instead of comparing proportions directly.</li>
+<li>Report the log-fold change with its confidence interval together
+with the adjusted q-value, and treat results that fail the pseudo-count
+sensitivity analysis as not robust.</li>
+<li>Check the statistical results against plots of the abundances,
+especially for taxa with many zeros.</li>
+<li>HUMAnN’s stratified pathways link differentially abundant taxa to
+the functions they may carry out, but these links are descriptive and
+generate hypotheses.</li>
 </ul></section><section id="05-wrap-up"><h2 class="section-heading"><a href="05-wrap-up.html">Wrap up</a></h2>
 <hr class="half-width">
 <ul>
@@ -451,9 +464,9 @@ downstream result.</li>
   "creativeWorkStatus": "active",
   "url": "melbournebioinformatics.github.io/uom-varnish/key-points.html",
   "identifier": "melbournebioinformatics.github.io/uom-varnish/key-points.html",
-  "dateCreated": "2026-11-02",
-  "dateModified": "2026-11-02",
-  "datePublished": "2026-11-02"
+  "dateCreated": "2026-11-03",
+  "dateModified": "2026-11-03",
+  "datePublished": "2026-11-03"
 }
 
   </script><script>

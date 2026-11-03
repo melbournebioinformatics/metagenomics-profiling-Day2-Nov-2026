@@ -291,7 +291,7 @@
       </div>
       <hr></nav><main id="main-content" class="main-content"><div class="container lesson-content">
         <h1>From pipeline output to analysis tables</h1>
-        <p>Last updated on 2026-11-02 |
+        <p>Last updated on 2026-11-03 |
 
         <a href="https://github.com/melbournebioinformatics/workbench-template-rmd/edit/main/learners/pipeline-to-tables.md" class="external-link">Edit this page <i aria-hidden="true" data-feather="edit"></i></a></p>
 
@@ -341,23 +341,23 @@ one file per sample in it:</p>
 <th>Files</th>
 <th>What we keep</th>
 </tr></thead><tbody><tr><td>MetaPhlAn</td>
-<td><code>metaphlan/&lt;database&gt;/&lt;sample&gt;*.metaphlan_profile.txt</code></td>
+<td><code>metaphlan/<wbr>&lt;database&gt;/<wbr>&lt;sample&gt;*.<wbr>metaphlan_profile.txt</wbr></wbr></wbr></code></td>
 <td>species rows, NCBI taxonomy ID, relative abundance (%)</td>
 </tr><tr><td>mOTUs</td>
-<td><code>motus/&lt;database&gt;/&lt;sample&gt;*.out</code></td>
+<td><code>motus/<wbr>&lt;database&gt;/<wbr>&lt;sample&gt;*.<wbr>out</wbr></wbr></wbr></code></td>
 <td>species, NCBI taxonomy ID, read counts</td>
 </tr><tr><td>Kraken2 + Bracken</td>
-<td><code>bracken/&lt;database&gt;/&lt;sample&gt;*.bracken.tsv</code></td>
+<td><code>bracken/<wbr>&lt;database&gt;/<wbr>&lt;sample&gt;*.<wbr>bracken.tsv</wbr></wbr></wbr></code></td>
 <td>species, NCBI taxonomy ID, re-estimated reads
 (<code>new_est_reads</code>)</td>
 </tr><tr><td>sylph</td>
-<td><code>sylph/&lt;database&gt;/&lt;sample&gt;*.sylphmpa</code></td>
+<td><code>sylph/<wbr>&lt;database&gt;/<wbr>&lt;sample&gt;*.<wbr>sylphmpa</wbr></wbr></wbr></code></td>
 <td>species, GTDB lineage, taxonomic and sequence abundance (%)</td>
 </tr><tr><td>fastp</td>
-<td><code>fastp/&lt;sample&gt;*.fastp.json</code></td>
+<td><code>fastp/<wbr>&lt;sample&gt;*.<wbr>fastp.json</wbr></wbr></code></td>
 <td>read pairs before and after quality control</td>
 </tr><tr><td>Kraken2</td>
-<td><code>kraken2/&lt;database&gt;/&lt;sample&gt;*.kraken2.report.txt</code></td>
+<td><code>kraken2/<wbr>&lt;database&gt;/<wbr>&lt;sample&gt;*.<wbr>kraken2.report.txt</wbr></wbr></wbr></code></td>
 <td>number of unclassified reads</td>
 </tr></tbody></table></div>
 </div>
@@ -377,9 +377,13 @@ one file per sample in it:</p>
 <span><span class="kw">library</span><span class="op">(</span><span class="va">dplyr</span><span class="op">)</span></span>
 <span><span class="kw">library</span><span class="op">(</span><span class="va">tidyr</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">results</span> <span class="op">&lt;-</span> <span class="st">"taxprofiler_results"</span>   <span class="co"># the pipeline's output folder (--outdir)</span></span>
-<span><span class="va">samples</span> <span class="op">&lt;-</span> <span class="fu">c</span><span class="op">(</span><span class="st">"Gut_sample1"</span>, <span class="st">"Gut_sample2"</span>, <span class="st">"Gut_sample3"</span>, <span class="st">"Gut_sample4"</span>, <span class="st">"Gut_sample5"</span><span class="op">)</span></span>
-<span><span class="va">out_dir</span> <span class="op">&lt;-</span> <span class="st">"my_tables"</span>             <span class="co"># a new folder, so the workshop data/ is not overwritten</span></span>
+<span><span class="co"># the pipeline's output folder (--outdir)</span></span>
+<span><span class="va">results</span> <span class="op">&lt;-</span> <span class="st">"taxprofiler_results"</span></span>
+<span><span class="co"># your sample IDs, as in the samplesheet</span></span>
+<span><span class="va">samples</span> <span class="op">&lt;-</span> <span class="fu">c</span><span class="op">(</span><span class="st">"Gut_sample1"</span>, <span class="st">"Gut_sample2"</span>, <span class="st">"Gut_sample3"</span>,</span>
+<span>             <span class="st">"Gut_sample4"</span>, <span class="st">"Gut_sample5"</span><span class="op">)</span></span>
+<span><span class="co"># a new folder, so the workshop data/ is not overwritten</span></span>
+<span><span class="va">out_dir</span> <span class="op">&lt;-</span> <span class="st">"my_tables"</span></span>
 <span><span class="fu">dir.create</span><span class="op">(</span><span class="va">out_dir</span>, showWarnings <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre>
 </div>
 <p>Three small functions do the work that is the same for every
@@ -388,18 +392,20 @@ profiler:</p>
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
 </h3>
 <pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Find one output file per sample for a profiler, e.g. all MetaPhlAn profiles.</span></span>
+<code class="sourceCode R"><span><span class="co"># Find one output file per sample for a profiler,</span></span>
+<span><span class="co"># e.g. all MetaPhlAn profiles.</span></span>
 <span><span class="va">find_files</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">folder</span>, <span class="va">pattern</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">files</span> <span class="op">&lt;-</span> <span class="fu">list.files</span><span class="op">(</span><span class="fu">file.path</span><span class="op">(</span><span class="va">results</span>, <span class="va">folder</span><span class="op">)</span>, pattern <span class="op">=</span> <span class="va">pattern</span>,</span>
 <span>                      recursive <span class="op">=</span> <span class="cn">TRUE</span>, full.names <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span>  <span class="kw">if</span> <span class="op">(</span><span class="fu">length</span><span class="op">(</span><span class="va">files</span><span class="op">)</span> <span class="op">!=</span> <span class="fu">length</span><span class="op">(</span><span class="va">samples</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
-<span>    <span class="kw">stop</span><span class="op">(</span><span class="st">"Expected "</span>, <span class="fu">length</span><span class="op">(</span><span class="va">samples</span><span class="op">)</span>, <span class="st">" files in "</span>, <span class="va">folder</span>, <span class="st">", found "</span>, <span class="fu">length</span><span class="op">(</span><span class="va">files</span><span class="op">)</span><span class="op">)</span></span>
+<span>    <span class="kw">stop</span><span class="op">(</span><span class="st">"Expected "</span>, <span class="fu">length</span><span class="op">(</span><span class="va">samples</span><span class="op">)</span>, <span class="st">" files in "</span>, <span class="va">folder</span>,</span>
+<span>         <span class="st">", found "</span>, <span class="fu">length</span><span class="op">(</span><span class="va">files</span><span class="op">)</span><span class="op">)</span></span>
 <span>  <span class="op">}</span></span>
 <span>  <span class="va">files</span></span>
 <span><span class="op">}</span></span>
 <span></span>
-<span><span class="co"># Which sample does a file belong to? File names start with the sample ID,</span></span>
-<span><span class="co"># followed by "_" or "." (e.g. Gut_sample1_db1.bracken.tsv).</span></span>
+<span><span class="co"># Which sample does a file belong to? File names start with the</span></span>
+<span><span class="co"># sample ID, followed by "_" or "." (e.g. Gut_sample1_db1.bracken.tsv).</span></span>
 <span><span class="va">sample_of</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">file</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="kw">for</span> <span class="op">(</span><span class="va">s</span> <span class="kw">in</span> <span class="va">samples</span><span class="op">)</span> <span class="op">{</span></span>
 <span>    <span class="kw">if</span> <span class="op">(</span><span class="fu">grepl</span><span class="op">(</span><span class="fu">paste0</span><span class="op">(</span><span class="st">"^"</span>, <span class="va">s</span>, <span class="st">"[._]"</span><span class="op">)</span>, <span class="fu">basename</span><span class="op">(</span><span class="va">file</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="kw">return</span><span class="op">(</span><span class="va">s</span><span class="op">)</span></span>
@@ -415,7 +421,8 @@ profiler:</p>
 <span>    <span class="fu">mutate</span><span class="op">(</span>name <span class="op">=</span> <span class="fu">first</span><span class="op">(</span><span class="va">name</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu">group_by</span><span class="op">(</span><span class="va">taxonomy_id</span>, <span class="va">name</span>, <span class="va">sample_id</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu">summarise</span><span class="op">(</span>value <span class="op">=</span> <span class="fu">sum</span><span class="op">(</span><span class="va">value</span><span class="op">)</span>, .groups <span class="op">=</span> <span class="st">"drop"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu">pivot_wider</span><span class="op">(</span>names_from <span class="op">=</span> <span class="va">sample_id</span>, values_from <span class="op">=</span> <span class="va">value</span>, values_fill <span class="op">=</span> <span class="fl">0</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu">pivot_wider</span><span class="op">(</span>names_from <span class="op">=</span> <span class="va">sample_id</span>, values_from <span class="op">=</span> <span class="va">value</span>,</span>
+<span>                values_fill <span class="op">=</span> <span class="fl">0</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu">select</span><span class="op">(</span><span class="va">taxonomy_id</span>, <span class="va">name</span>, <span class="fu">all_of</span><span class="op">(</span><span class="va">samples</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu">arrange</span><span class="op">(</span><span class="fu">desc</span><span class="op">(</span><span class="fu">rowSums</span><span class="op">(</span><span class="fu">across</span><span class="op">(</span><span class="fu">all_of</span><span class="op">(</span><span class="va">samples</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre>
@@ -445,12 +452,17 @@ ID of their own, <code>MetaPhlAn:&lt;name&gt;</code>.</p>
 <pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">read_metaphlan</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">file</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu">read_tsv</span><span class="op">(</span><span class="va">file</span>, comment <span class="op">=</span> <span class="st">"#"</span>, quote <span class="op">=</span> <span class="st">""</span>,</span>
-<span>           col_names <span class="op">=</span> <span class="fu">c</span><span class="op">(</span><span class="st">"clade_name"</span>, <span class="st">"ncbi_tax_id"</span>, <span class="st">"relative_abundance"</span>, <span class="st">"additional_species"</span><span class="op">)</span>,</span>
+<span>           col_names <span class="op">=</span> <span class="fu">c</span><span class="op">(</span><span class="st">"clade_name"</span>, <span class="st">"ncbi_tax_id"</span>,</span>
+<span>                         <span class="st">"relative_abundance"</span>, <span class="st">"additional_species"</span><span class="op">)</span>,</span>
 <span>           col_types <span class="op">=</span> <span class="st">"ccdc"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu">filter</span><span class="op">(</span><span class="fu">grepl</span><span class="op">(</span><span class="st">"(^|\\|)s__[^|]*$"</span>, <span class="va">clade_name</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span>     <span class="co"># species rows only</span></span>
+<span>    <span class="co"># species rows only</span></span>
+<span>    <span class="fu">filter</span><span class="op">(</span><span class="fu">grepl</span><span class="op">(</span><span class="st">"(^|\\|)s__[^|]*$"</span>, <span class="va">clade_name</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu">mutate</span><span class="op">(</span>species     <span class="op">=</span> <span class="fu">sub</span><span class="op">(</span><span class="st">".*s__"</span>, <span class="st">""</span>, <span class="va">clade_name</span><span class="op">)</span>,</span>
-<span>           taxonomy_id <span class="op">=</span> <span class="fu">sub</span><span class="op">(</span><span class="st">".*\\|"</span>, <span class="st">""</span>, <span class="va">ncbi_tax_id</span><span class="op">)</span>,    <span class="co"># last ID in the path</span></span>
-<span>           taxonomy_id <span class="op">=</span> <span class="fu">ifelse</span><span class="op">(</span><span class="va">taxonomy_id</span> <span class="op">==</span> <span class="st">""</span>, <span class="fu">paste0</span><span class="op">(</span><span class="st">"MetaPhlAn:"</span>, <span class="va">species</span><span class="op">)</span>, <span class="va">taxonomy_id</span><span class="op">)</span>,</span>
+<span>           <span class="co"># the last ID in the path</span></span>
+<span>           taxonomy_id <span class="op">=</span> <span class="fu">sub</span><span class="op">(</span><span class="st">".*\\|"</span>, <span class="st">""</span>, <span class="va">ncbi_tax_id</span><span class="op">)</span>,</span>
+<span>           taxonomy_id <span class="op">=</span> <span class="fu">ifelse</span><span class="op">(</span><span class="va">taxonomy_id</span> <span class="op">==</span> <span class="st">""</span>,</span>
+<span>                                <span class="fu">paste0</span><span class="op">(</span><span class="st">"MetaPhlAn:"</span>, <span class="va">species</span><span class="op">)</span>,</span>
+<span>                                <span class="va">taxonomy_id</span><span class="op">)</span>,</span>
 <span>           name        <span class="op">=</span> <span class="fu">gsub</span><span class="op">(</span><span class="st">"_"</span>, <span class="st">" "</span>, <span class="va">species</span><span class="op">)</span>,</span>
 <span>           sample_id   <span class="op">=</span> <span class="fu">sample_of</span><span class="op">(</span><span class="va">file</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu">select</span><span class="op">(</span><span class="va">sample_id</span>, <span class="va">taxonomy_id</span>, <span class="va">name</span>, value <span class="op">=</span> <span class="va">relative_abundance</span><span class="op">)</span></span>
@@ -475,13 +487,15 @@ database) gets the ID <code>-1</code>.</p>
 <pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">read_motus</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">file</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu">read_tsv</span><span class="op">(</span><span class="va">file</span>, comment <span class="op">=</span> <span class="st">"#"</span>, quote <span class="op">=</span> <span class="st">""</span>,</span>
-<span>           col_names <span class="op">=</span> <span class="fu">c</span><span class="op">(</span><span class="st">"label"</span>, <span class="st">"ncbi_tax_id"</span>, <span class="st">"count"</span><span class="op">)</span>, col_types <span class="op">=</span> <span class="st">"ccd"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>           col_names <span class="op">=</span> <span class="fu">c</span><span class="op">(</span><span class="st">"label"</span>, <span class="st">"ncbi_tax_id"</span>, <span class="st">"count"</span><span class="op">)</span>,</span>
+<span>           col_types <span class="op">=</span> <span class="st">"ccd"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu">filter</span><span class="op">(</span><span class="va">count</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu">mutate</span><span class="op">(</span>motu_id     <span class="op">=</span> <span class="fu">sub</span><span class="op">(</span><span class="st">".*\\[(.*)\\]$"</span>, <span class="st">"\\1"</span>, <span class="va">label</span><span class="op">)</span>,</span>
 <span>           name        <span class="op">=</span> <span class="fu">sub</span><span class="op">(</span><span class="st">"\\s*\\[[^]]*\\]$"</span>, <span class="st">""</span>, <span class="va">label</span><span class="op">)</span>,</span>
 <span>           taxonomy_id <span class="op">=</span> <span class="fu">case_when</span><span class="op">(</span></span>
 <span>             <span class="fu">startsWith</span><span class="op">(</span><span class="va">label</span>, <span class="st">"unassigned"</span><span class="op">)</span> <span class="op">~</span> <span class="st">"-1"</span>,</span>
-<span>             <span class="fu">is.na</span><span class="op">(</span><span class="va">ncbi_tax_id</span><span class="op">)</span> <span class="op">~</span> <span class="fu">paste0</span><span class="op">(</span><span class="st">"mOTUs:"</span>, <span class="va">motu_id</span><span class="op">)</span>,   <span class="co"># no NCBI species</span></span>
+<span>             <span class="co"># mOTUs without an NCBI species keep their mOTU ID</span></span>
+<span>             <span class="fu">is.na</span><span class="op">(</span><span class="va">ncbi_tax_id</span><span class="op">)</span> <span class="op">~</span> <span class="fu">paste0</span><span class="op">(</span><span class="st">"mOTUs:"</span>, <span class="va">motu_id</span><span class="op">)</span>,</span>
 <span>             <span class="cn">TRUE</span> <span class="op">~</span> <span class="va">ncbi_tax_id</span><span class="op">)</span>,</span>
 <span>           sample_id   <span class="op">=</span> <span class="fu">sample_of</span><span class="op">(</span><span class="va">file</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu">select</span><span class="op">(</span><span class="va">sample_id</span>, <span class="va">taxonomy_id</span>, <span class="va">name</span>, value <span class="op">=</span> <span class="va">count</span><span class="op">)</span></span>
@@ -502,8 +516,11 @@ assign to a higher rank.</p>
 </h3>
 <pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">read_bracken</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">file</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="fu">read_tsv</span><span class="op">(</span><span class="va">file</span>, quote <span class="op">=</span> <span class="st">""</span>, col_types <span class="op">=</span> <span class="fu">cols</span><span class="op">(</span>taxonomy_id <span class="op">=</span> <span class="st">"c"</span>, .default <span class="op">=</span> <span class="fu">col_guess</span><span class="op">(</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu">transmute</span><span class="op">(</span>sample_id <span class="op">=</span> <span class="fu">sample_of</span><span class="op">(</span><span class="va">file</span><span class="op">)</span>, <span class="va">taxonomy_id</span>, <span class="va">name</span>, value <span class="op">=</span> <span class="va">new_est_reads</span><span class="op">)</span></span>
+<span>  <span class="fu">read_tsv</span><span class="op">(</span><span class="va">file</span>, quote <span class="op">=</span> <span class="st">""</span>,</span>
+<span>           col_types <span class="op">=</span> <span class="fu">cols</span><span class="op">(</span>taxonomy_id <span class="op">=</span> <span class="st">"c"</span>,</span>
+<span>                            .default <span class="op">=</span> <span class="fu">col_guess</span><span class="op">(</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu">transmute</span><span class="op">(</span>sample_id <span class="op">=</span> <span class="fu">sample_of</span><span class="op">(</span><span class="va">file</span><span class="op">)</span>, <span class="va">taxonomy_id</span>, <span class="va">name</span>,</span>
+<span>              value <span class="op">=</span> <span class="va">new_est_reads</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span></span>
 <span><span class="va">bracken</span> <span class="op">&lt;-</span> <span class="fu">find_files</span><span class="op">(</span><span class="st">"bracken"</span>, <span class="st">"\\.bracken\\.tsv$"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -523,12 +540,13 @@ and the full lineage is kept in a <code>gtdb_lineage</code> column.</p>
 </h3>
 <pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">read_sylph</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">file</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="fu">read_tsv</span><span class="op">(</span><span class="va">file</span>, comment <span class="op">=</span> <span class="st">"#"</span>, quote <span class="op">=</span> <span class="st">""</span>, col_types <span class="op">=</span> <span class="fu">cols</span><span class="op">(</span>.default <span class="op">=</span> <span class="st">"c"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">read_tsv</span><span class="op">(</span><span class="va">file</span>, comment <span class="op">=</span> <span class="st">"#"</span>, quote <span class="op">=</span> <span class="st">""</span>,</span>
+<span>           col_types <span class="op">=</span> <span class="fu">cols</span><span class="op">(</span>.default <span class="op">=</span> <span class="st">"c"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu">select</span><span class="op">(</span>clade_name <span class="op">=</span> <span class="fl">1</span>, taxonomic <span class="op">=</span> <span class="fl">2</span>, sequence <span class="op">=</span> <span class="fl">3</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu">filter</span><span class="op">(</span><span class="fu">grepl</span><span class="op">(</span><span class="st">"(^|\\|)s__[^|]*$"</span>, <span class="va">clade_name</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu">mutate</span><span class="op">(</span><span class="fu">across</span><span class="op">(</span><span class="fu">c</span><span class="op">(</span><span class="va">taxonomic</span>, <span class="va">sequence</span><span class="op">)</span>, <span class="va">as.numeric</span><span class="op">)</span>,</span>
 <span>           name         <span class="op">=</span> <span class="fu">sub</span><span class="op">(</span><span class="st">".*s__"</span>, <span class="st">""</span>, <span class="va">clade_name</span><span class="op">)</span>,</span>
-<span>           taxonomy_id  <span class="op">=</span> <span class="va">name</span>,                          <span class="co"># GTDB has no taxonomy IDs</span></span>
+<span>           taxonomy_id  <span class="op">=</span> <span class="va">name</span>,   <span class="co"># GTDB has no taxonomy IDs</span></span>
 <span>           gtdb_lineage <span class="op">=</span> <span class="fu">gsub</span><span class="op">(</span><span class="st">"|"</span>, <span class="st">";"</span>, <span class="va">clade_name</span>, fixed <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
 <span>           sample_id    <span class="op">=</span> <span class="fu">sample_of</span><span class="op">(</span><span class="va">file</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
@@ -569,16 +587,21 @@ patient.</p>
 <span><span class="op">}</span></span>
 <span></span>
 <span><span class="va">read_kraken2_report</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">file</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="va">report</span> <span class="op">&lt;-</span> <span class="fu">read_tsv</span><span class="op">(</span><span class="va">file</span>, col_names <span class="op">=</span> <span class="cn">FALSE</span>, quote <span class="op">=</span> <span class="st">""</span>, col_types <span class="op">=</span> <span class="fu">cols</span><span class="op">(</span>.default <span class="op">=</span> <span class="st">"c"</span><span class="op">)</span><span class="op">)</span></span>
-<span>  <span class="va">unclassified</span> <span class="op">&lt;-</span> <span class="fu">sum</span><span class="op">(</span><span class="fu">as.numeric</span><span class="op">(</span><span class="va">report</span><span class="op">$</span><span class="va">X2</span><span class="op">[</span><span class="va">report</span><span class="op">$</span><span class="va">X5</span> <span class="op">==</span> <span class="st">"0"</span><span class="op">]</span><span class="op">)</span><span class="op">)</span>   <span class="co"># taxid 0</span></span>
-<span>  <span class="va">classified</span>   <span class="op">&lt;-</span> <span class="fu">sum</span><span class="op">(</span><span class="fu">as.numeric</span><span class="op">(</span><span class="va">report</span><span class="op">$</span><span class="va">X2</span><span class="op">[</span><span class="va">report</span><span class="op">$</span><span class="va">X5</span> <span class="op">==</span> <span class="st">"1"</span><span class="op">]</span><span class="op">)</span><span class="op">)</span>   <span class="co"># taxid 1 = root</span></span>
+<span>  <span class="va">report</span> <span class="op">&lt;-</span> <span class="fu">read_tsv</span><span class="op">(</span><span class="va">file</span>, col_names <span class="op">=</span> <span class="cn">FALSE</span>, quote <span class="op">=</span> <span class="st">""</span>,</span>
+<span>                     col_types <span class="op">=</span> <span class="fu">cols</span><span class="op">(</span>.default <span class="op">=</span> <span class="st">"c"</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="co"># column 2 = reads in the clade, column 5 = taxonomy ID</span></span>
+<span>  <span class="va">unclassified</span> <span class="op">&lt;-</span> <span class="fu">sum</span><span class="op">(</span><span class="fu">as.numeric</span><span class="op">(</span><span class="va">report</span><span class="op">$</span><span class="va">X2</span><span class="op">[</span><span class="va">report</span><span class="op">$</span><span class="va">X5</span> <span class="op">==</span> <span class="st">"0"</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="va">classified</span>   <span class="op">&lt;-</span> <span class="fu">sum</span><span class="op">(</span><span class="fu">as.numeric</span><span class="op">(</span><span class="va">report</span><span class="op">$</span><span class="va">X2</span><span class="op">[</span><span class="va">report</span><span class="op">$</span><span class="va">X5</span> <span class="op">==</span> <span class="st">"1"</span><span class="op">]</span><span class="op">)</span><span class="op">)</span>  <span class="co"># root</span></span>
 <span>  <span class="fu">tibble</span><span class="op">(</span>sample_id <span class="op">=</span> <span class="fu">sample_of</span><span class="op">(</span><span class="va">file</span><span class="op">)</span>,</span>
-<span>         kraken2_unclassified_pct <span class="op">=</span> <span class="fu">round</span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="va">unclassified</span> <span class="op">/</span> <span class="op">(</span><span class="va">unclassified</span> <span class="op">+</span> <span class="va">classified</span><span class="op">)</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
+<span>         kraken2_unclassified_pct <span class="op">=</span></span>
+<span>           <span class="fu">round</span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="va">unclassified</span> <span class="op">/</span> <span class="op">(</span><span class="va">unclassified</span> <span class="op">+</span> <span class="va">classified</span><span class="op">)</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span></span>
-<span><span class="va">metadata</span> <span class="op">&lt;-</span> <span class="fu">bind_rows</span><span class="op">(</span><span class="fu">lapply</span><span class="op">(</span><span class="fu">find_files</span><span class="op">(</span><span class="st">"fastp"</span>, <span class="st">"\\.fastp\\.json$"</span><span class="op">)</span>, <span class="va">read_fastp</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">left_join</span><span class="op">(</span><span class="fu">bind_rows</span><span class="op">(</span><span class="fu">lapply</span><span class="op">(</span><span class="fu">find_files</span><span class="op">(</span><span class="st">"kraken2"</span>, <span class="st">"kraken2\\.report\\.txt$"</span><span class="op">)</span>,</span>
-<span>                             <span class="va">read_kraken2_report</span><span class="op">)</span><span class="op">)</span>,</span>
+<span><span class="va">fastp_files</span>   <span class="op">&lt;-</span> <span class="fu">find_files</span><span class="op">(</span><span class="st">"fastp"</span>, <span class="st">"\\.fastp\\.json$"</span><span class="op">)</span></span>
+<span><span class="va">kraken2_files</span> <span class="op">&lt;-</span> <span class="fu">find_files</span><span class="op">(</span><span class="st">"kraken2"</span>, <span class="st">"kraken2\\.report\\.txt$"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">metadata</span> <span class="op">&lt;-</span> <span class="fu">bind_rows</span><span class="op">(</span><span class="fu">lapply</span><span class="op">(</span><span class="va">fastp_files</span>, <span class="va">read_fastp</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">left_join</span><span class="op">(</span><span class="fu">bind_rows</span><span class="op">(</span><span class="fu">lapply</span><span class="op">(</span><span class="va">kraken2_files</span>, <span class="va">read_kraken2_report</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>            by <span class="op">=</span> <span class="st">"sample_id"</span><span class="op">)</span></span></code></pre>
 </div>
 </section><section><h2 class="section-heading" id="save-the-tables">Save the tables<a class="anchor" aria-label="anchor" href="#save-the-tables"></a></h2>
@@ -691,9 +714,9 @@ any links that you are not going to use.
   "creativeWorkStatus": "active",
   "url": "melbournebioinformatics.github.io/uom-varnish/pipeline-to-tables.html",
   "identifier": "melbournebioinformatics.github.io/uom-varnish/pipeline-to-tables.html",
-  "dateCreated": "2026-11-02",
-  "dateModified": "2026-11-02",
-  "datePublished": "2026-11-02"
+  "dateCreated": "2026-11-03",
+  "dateModified": "2026-11-03",
+  "datePublished": "2026-11-03"
 }
 
   </script><script>

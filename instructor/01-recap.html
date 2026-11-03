@@ -102,7 +102,7 @@
           <button class="nav-link dropdown-toggle" id="navbarDropdown" data-bs-toggle="dropdown" aria-expanded="false">
             More <i data-feather="chevron-down"></i>
           </button>
-          <ul class="dropdown-menu" aria-labelledby="navbarDropdown"><hr><li><a class="dropdown-item" href="pipeline-to-tables.html">From pipeline output to analysis tables</a></li><li><a class="dropdown-item" href="reference.html">Reference</a></li>
+          <ul class="dropdown-menu" aria-labelledby="navbarDropdown"><li><a class="dropdown-item" href="episode-03-background.html">Episode 3: background for instructors</a></li><hr><li><a class="dropdown-item" href="pipeline-to-tables.html">From pipeline output to analysis tables</a></li><li><a class="dropdown-item" href="reference.html">Reference</a></li>
           </ul></li>
       </ul></div>
     <!--
@@ -280,7 +280,7 @@
                       <li>
                         <a href="../instructor/images.html">Extract All Images</a>
                       </li>
-                      <hr><li><a class="dropdown-item" href="pipeline-to-tables.html">From pipeline output to analysis tables</a></li><li><a class="dropdown-item" href="reference.html">Reference</a></li>
+                      <li><a href="episode-03-background.html">Episode 3: background for instructors</a></li><hr><li><a class="dropdown-item" href="pipeline-to-tables.html">From pipeline output to analysis tables</a></li><li><a class="dropdown-item" href="reference.html">Reference</a></li>
                     </ul></div>
                 </div>
               </div>
@@ -316,7 +316,7 @@
       </div>
       <hr></nav><main id="main-content" class="main-content"><div class="container lesson-content">
         <h1>Recap from Day 1</h1>
-        <p>Last updated on 2026-11-02 |
+        <p>Last updated on 2026-11-03 |
 
         <a href="https://github.com/melbournebioinformatics/workbench-template-rmd/edit/main/episodes/01-recap.Rmd" class="external-link">Edit this page <i aria-hidden="true" data-feather="edit"></i></a></p>
 
@@ -365,7 +365,7 @@ abundance tables:</p>
 <th>Output</th>
 </tr></thead><tbody><tr><td>1. Data</td>
 <td>Downloaded paired-end FASTQ files and sample metadata</td>
-<td>ENA browser, <code>wget</code>, MD5 check</td>
+<td>Figshare, <code>wget</code>, MD5 check</td>
 <td>Raw reads, <code>metadata.tsv</code>
 </td>
 </tr><tr><td>2. Pipeline setup</td>
@@ -377,8 +377,9 @@ command</td>
 <code>params.json</code>
 </td>
 </tr><tr><td>3. Pre-processing</td>
-<td>Read QC, adapter trimming, host-read removal</td>
-<td>nf-core/taxprofiler (fastp, Bowtie2, …)</td>
+<td>Read QC and adapter trimming. Host-read removal was switched off,
+because the reads are simulated and contain no human DNA</td>
+<td>nf-core/taxprofiler (FastQC, fastp)</td>
 <td>MultiQC report</td>
 </tr><tr><td>4. Taxonomic profiling</td>
 <td>The same reads were classified by four profilers</td>
@@ -386,7 +387,7 @@ command</td>
 <td>One profile per tool and sample</td>
 </tr><tr><td>5. Standardisation</td>
 <td>Profiles were converted to a common format and merged</td>
-<td>Taxpasta</td>
+<td>Taxpasta (MetaPhlAn, mOTUs, Kraken2/Bracken), sylph-tax (sylph)</td>
 <td>One merged table per profiler</td>
 </tr><tr><td>6. Import into R</td>
 <td>Tables and metadata were loaded into a single object</td>
@@ -396,15 +397,31 @@ command</td>
 <td>
 <code>TreeSummarizedExperiment</code> object</td>
 </tr></tbody></table><!-- FIXME: replace with a workflow figure (e.g. episodes/fig/workflow.png) shared with the Day 1 lesson --></section><section><h2 class="section-heading" id="the-dataset">The dataset<a class="anchor" aria-label="anchor" href="#the-dataset"></a></h2>
-<hr class="half-width"><p>We are using samples from the benchmarking study by Sun <em>et
-al.</em> (2021), <a href="https://doi.org/10.1038/s41592-021-01141-3" class="external-link"><em>Challenges in
-benchmarking metagenomic profilers</em></a>. These are mock and
-simulated communities, so we know the <strong>true</strong> composition
-of each sample. On Day 1, we used the a subset of the original data as
-input for the pipelines, which does not reflect the complete taxonomic
-and functional profiles of the samples. Therefore, we also provide you
-with the outputs from the full metagen</p>
-<!-- FIXME: add the number of samples, community types and sequencing depth once the subset is fixed -->
+<hr class="half-width"><p>We are using the five simulated human gut metagenomes from the
+benchmarking study by Sun <em>et al.</em> (2021), <a href="https://doi.org/10.1038/s41592-021-01141-3" class="external-link"><em>Challenges in
+benchmarking metagenomic profilers</em></a>. The reads were simulated
+from known genomes in known proportions, so we know the
+<strong>true</strong> composition of each sample.</p>
+<table class="table"><colgroup><col width="50%"><col width="50%"></colgroup><tbody><tr><td>Samples</td>
+<td>5 (<code>Gut_sample1</code> to <code>Gut_sample5</code>)</td>
+</tr><tr><td>Species</td>
+<td>95 in total, 56–76 per sample</td>
+</tr><tr><td>Reads</td>
+<td>about 10 million read pairs per sample, Illumina 2 × 150 bp</td>
+</tr><tr><td>Ground truth</td>
+<td>taxonomic abundance (fraction of cells) and sequence abundance
+(fraction of reads) for every species</td>
+</tr></tbody></table><p>To avoid favouring one profiler, Sun <em>et al.</em> only used
+species present in the reference databases of MetaPhlAn, mOTUs and
+Kraken2 at the time. The community is therefore a benchmark rather than
+a realistic gut: it includes oral, vaginal and skin species, and lacks
+some typical gut dominants.</p>
+<p>On Day 1, you ran the pipeline on a random subset of 100,000 read
+pairs per sample, so that it finishes within the session. A profile from
+1–2% of the reads misses many low-abundance species. Today we analyse
+the profiles from the <strong>full</strong> samples, produced with the
+same pipeline (nf-core/taxprofiler 2.0.1), the same profilers and the
+same databases.</p>
 </section><section><h2 class="section-heading" id="what-we-do-today">What we do today<a class="anchor" aria-label="anchor" href="#what-we-do-today"></a></h2>
 <hr class="half-width"><ol style="list-style-type: decimal"><li>
 <strong>Concepts:</strong> why the four profilers give different
@@ -438,11 +455,12 @@ species present, their abundances, or both?</p>
 <div class="callout-inner">
 <div class="callout-content">
 <ul><li>nf-core/taxprofiler ran four profilers on the same reads, and
-Taxpasta standardised their outputs into comparable tables.</li>
+Taxpasta and sylph-tax standardised their outputs into comparable
+tables.</li>
 <li>Our samples have a known composition (the ground truth), so we can
 judge how accurate each profiler is.</li>
-<li>Today’s analysis starts from the merged Taxpasta tables and the
-sample metadata.</li>
+<li>Today’s analysis uses the profiles of the full samples, not the
+subset from Day 1.</li>
 </ul></div>
 </div>
 </div>
@@ -509,9 +527,9 @@ any links that you are not going to use.
   "creativeWorkStatus": "active",
   "url": "melbournebioinformatics.github.io/uom-varnish/instructor/01-recap.html",
   "identifier": "melbournebioinformatics.github.io/uom-varnish/instructor/01-recap.html",
-  "dateCreated": "2026-11-02",
-  "dateModified": "2026-11-02",
-  "datePublished": "2026-11-02"
+  "dateCreated": "2026-11-03",
+  "dateModified": "2026-11-03",
+  "datePublished": "2026-11-03"
 }
 
   </script><script>
