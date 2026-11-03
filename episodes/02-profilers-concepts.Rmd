@@ -43,14 +43,15 @@ Most metagenomic databases are built on one of two taxonomies:
 | How taxa are defined | Historical, literature-based classification. Ranks are not standardised across lineages | Phylogeny of conserved marker proteins, with ranks normalised by relative evolutionary divergence. Species are clusters of genomes at about 95% ANI |
 | Coverage | Bacteria, archaea, viruses, fungi, other eukaryotes, plasmids, the human genome | Bacteria and archaea only, including many uncultured genomes (MAGs) |
 | Names | Familiar, e.g. *Shigella flexneri*, phylum Firmicutes / Bacillota | Can differ from NCBI. For example, *Shigella* species fall within *Escherichia coli*, and genera are split with suffixes such as `Clostridium_A` |
+| Updates | Continuously; each tool uses the snapshot from when its database was built | Numbered releases, about once a year. The sylph database used in this workshop is **GTDB R220** (April 2024) |
 
-<!-- FIXME: double-check the examples and add the GTDB release used by the workshop's sylph database -->
+In the Sun et al data, the same *Clostridium perfringens* genome is called *Sarcina perfringens* by GTDB, and *[Ruminococcus] gnavus* is *Ruminococcus_B gnavus*. The differences reach the top of the tree too. For `Gut_sample1`, MetaPhlAn (NCBI) puts 66.9% of the community in the phylum Firmicutes, while sylph (GTDB R220) splits the same species across four phyla: *Bacillota* (32.7%), *Bacillota_A* (26.9%), *Bacillota_C* (5.8%) and *Bacillota_I* (2.5%).
 
 ::::::::::::::::::::::::::::::::::::: callout
 
 ### Names are not interchangeable
 
-A profiler using a GTDB database and one using an NCBI database can detect the same organism under **different names**. Before comparing the profilers' outputs, we have to map them to a common taxonomy. Otherwise a correct detection looks like a false positive plus a false negative.
+A profiler using a GTDB database and one using an NCBI database can detect the same organism under **different names**. Before comparing the profilers' outputs, we have to map them to a common taxonomy. Otherwise a correct detection looks like a false positive plus a false negative. Even within NCBI, names change between versions while the **taxonomy ID** stays the same. In our data, taxonomy ID 33038 is *[Ruminococcus] gnavus* for mOTUs, *Ruminococcus gnavus* for MetaPhlAn and *Mediterraneibacter gnavus* for Kraken2. Therefore, taxonomy matching should be done using taxonomy IDs, not names. 
 
 ::::::::::::::::::::::::::::::::::::::::::::::::
 
@@ -90,6 +91,8 @@ The same community gives very different numbers depending on what is reported.
 
 **Containment ANI** estimates the ANI between a *reference genome* and the *reads in a metagenome*. It is based on the fraction of the reference genome's k-mers found (contained) in the sample. If the reference is present, nearly all its k-mers should be found. A lower containment ANI suggests a related strain or species rather than the reference itself. At low sequencing depth, many k-mers are missed simply by chance. sylph corrects for this and reports an **adjusted ANI**.
 
+In our data, most genomes sylph detected have an adjusted ANI above 99.5%: the reads came from that genome, or one almost identical to it. *Gemella morbillorum* in `Gut_sample1`, for example, has 99.98%. *Ruminococcus_B gnavus* has 97.1%: the simulated strain is a different strain of the same species as the GTDB reference genome.
+
 ## The four profilers
 
 | | MetaPhlAn | mOTUs | Kraken2 + Bracken | sylph |
@@ -98,14 +101,16 @@ The same community gives very different numbers depending on what is reported.
 | Database | ChocoPhlAn marker database, organised into species-level genome bins (SGBs) | mOTUs database: marker-gene clusters from reference genomes *and* metagenome-assembled genomes | User-chosen, often built from RefSeq (e.g. the Kraken2 *Standard* database). Bracken files are built per database and read length | Pre-built genome databases, e.g. GTDB |
 | Reports | Taxonomic abundance (relative) | Relative abundance from single-copy markers (≈ taxonomic). Read counts optional | Reads per taxon (sequence abundance) | **Both** sequence and taxonomic abundance, plus ANI and coverage |
 | Unknown taxa | Unknown SGBs (uSGBs) from MAGs | Reports an *unassigned* (`-1`) fraction for species not in the database | Reads stay unclassified, or are assigned to a higher rank | Genomes below the ANI threshold are not reported |
+| **In this workshop** | MetaPhlAn 4.1.1, <code>mpa_<wbr>vJun23_<wbr>CHOCOPhlAnSGB_<wbr>202403</code> | mOTUs 3.1.0, run with read counts (`-c`) | Kraken2 2.1.5 + Bracken 3.0.1, Standard-8 database <code>k2_<wbr>standard_<wbr>08_<wbr>GB_<wbr>20260626</code> (capped at 8 GB) | sylph 0.7.0 + sylph-tax 1.2.0, GTDB R220 (`c200`) |
+| **Values in our tables** | Taxonomic abundance (%) | Marker-gene read counts (<code>insert.<wbr>scaled_<wbr>counts</code>) | Reads per species (<code>new_<wbr>est_<wbr>reads</code>) | Taxonomic and sequence abundance (%) |
 
-<!-- FIXME: confirm tool/database versions used on Day 1 and which abundance column Taxpasta keeps for each profiler -->
+All four ran inside nf-core/taxprofiler 2.0.1. Taxpasta 0.7.0 standardised the MetaPhlAn, mOTUs and Kraken2/Bracken outputs. Taxpasta does not support sylph, so the pipeline merges sylph's output with sylph-tax instead.
 
 ### Pros and cons
 
 - **MetaPhlAn:** fast, with few false positives thanks to the unique marker genes. Covers bacteria, archaea and some eukaryotes and viruses. Can miss taxa that have few markers or are present at low coverage. Gives no read counts by default.
 - **mOTUs:** estimates the proportion of *unknown* species, and works well for poorly characterised environments thanks to its MAG-derived markers. Only covers prokaryotes.
-- **Kraken2/Bracken:** classifies every read, can include viruses and eukaryotes, and its read counts suit count-based statistics. Prone to false positives, especially with small or incomplete databases, so it often needs abundance or read-count filtering. Its abundance is sequence abundance.
+- **Kraken2/Bracken:** classifies every read, can include viruses and eukaryotes, and its read counts suit count-based statistics. Prone to false positives, especially with small or incomplete databases, so it often needs abundance or read-count filtering. Its abundance is sequence abundance. With the capped Standard-8 database used here, about a quarter of the reads stay unclassified.
 - **sylph:** very fast, accurate at species level, reports both abundance types, and its ANI output helps tell strains apart. Only as good as its genome database (GTDB covers bacteria and archaea only), and uses GTDB names.
 
 ::::::::::::::::::::::::::::::::::::: challenge
@@ -144,7 +149,7 @@ There is rarely one "best" profiler. A practical strategy:
 
 - Profilers differ in their database (NCBI/RefSeq vs GTDB), method (marker genes, k-mers, sketching) and type of abundance, and all three affect the results.
 - Sequence abundance (fraction of reads) and taxonomic abundance (fraction of cells) differ systematically because genome sizes differ.
-- Containment ANI estimates how much of a reference genome in "contained" in the sample.
+- Containment ANI estimates how much of a reference genome is "contained" in the sample.
 - Choose the profiler and abundance type that match your research question, and use agreement between tools as supporting evidence.
 
 ::::::::::::::::::::::::::::::::::::::::::::::::
