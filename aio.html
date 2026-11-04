@@ -352,7 +352,7 @@
         
 <section id="aio-01-recap"><p>Content from <a href="01-recap.html">Recap from Day 1</a></p>
 <hr>
-<p>Last updated on 2026-11-03 |
+<p>Last updated on 2026-11-04 |
 
         <a href="https://github.com/melbournebioinformatics/workbench-template-rmd/edit/main/episodes/01-recap.Rmd" class="external-link">Edit this page <i aria-hidden="true" data-feather="edit"></i></a></p>
 <div class="text-end">
@@ -552,7 +552,7 @@ any links that you are not going to use.
  -->
 </section></section><section id="aio-02-profilers-concepts"><p>Content from <a href="02-profilers-concepts.html">Comparing taxonomic profilers: concepts</a></p>
 <hr>
-<p>Last updated on 2026-11-03 |
+<p>Last updated on 2026-11-04 |
 
         <a href="https://github.com/melbournebioinformatics/workbench-template-rmd/edit/main/episodes/02-profilers-concepts.Rmd" class="external-link">Edit this page <i aria-hidden="true" data-feather="edit"></i></a></p>
 <div class="text-end">
@@ -603,16 +603,14 @@ other outputs as complementary information</li>
 and <em>how much of each?</em> Each profiler’s answer depends on three
 choices:</p>
 <ol style="list-style-type: decimal">
-<li>the <strong>reference database</strong> it compares reads
-against;</li>
-<li>the <strong>method</strong> it uses to assign reads, or parts of
-reads, to taxa;</li>
-<li>the <strong>type of abundance</strong> it reports.</li>
+<li>the <strong>reference database</strong> used for profiling;</li>
+<li>the <strong>method</strong> used to assign reads, or parts of reads,
+to taxa;</li>
+<li>the <strong>type of abundance</strong> being reported.</li>
 </ol>
 <p>Two profilers that differ in any of these can give different results
-for the same sample, and both can be “correct”. Before we compare the
-outputs in R (next episode), we need to understand these
-differences.</p>
+for the same sample, and none is wrong! Before we compare the outputs in
+R (next episode), we need to understand these differences.</p>
 </section><section><h2 class="section-heading" id="reference-databases-the-two-pillars">Reference databases: the two pillars<a class="anchor" aria-label="anchor" href="#reference-databases-the-two-pillars"></a>
 </h2>
 <hr class="half-width">
@@ -669,14 +667,15 @@ this workshop is <strong>GTDB R220</strong> (April 2024)</td>
 </tr>
 </tbody>
 </table>
-<p>In the Sun et al data, the same <em>Clostridium perfringens</em>
+<p>In the Sun <em>et al.</em> data, <em>Clostridium perfringens</em>
 genome is called <em>Sarcina perfringens</em> by GTDB, and
-<em>[Ruminococcus] gnavus</em> is <em>Ruminococcus_B gnavus</em>. The
-differences reach the top of the tree too. For <code>Gut_sample1</code>,
-MetaPhlAn (NCBI) puts 66.9% of the community in the phylum Firmicutes,
-while sylph (GTDB R220) splits the same species across four phyla:
-<em>Bacillota</em> (32.7%), <em>Bacillota_A</em> (26.9%),
-<em>Bacillota_C</em> (5.8%) and <em>Bacillota_I</em> (2.5%).</p>
+<em>[Ruminococcus] gnavus</em> is <em>Ruminococcus_B gnavus</em>. This
+disparity even exits at a higher taxonomic level. For
+<code>Gut_sample1</code>, MetaPhlAn (NCBI) puts 66.9% of the community
+in the phylum Firmicutes, while sylph (GTDB R220) splits the same
+species across four phyla: <em>Bacillota</em> (32.7%),
+<em>Bacillota_A</em> (26.9%), <em>Bacillota_C</em> (5.8%) and
+<em>Bacillota_I</em> (2.5%).</p>
 <div id="names-are-not-interchangeable" class="callout">
 <div class="callout-square">
 <i class="callout-icon" data-feather="bell"></i>
@@ -720,7 +719,9 @@ spike-ins, qPCR or flow cytometry.</li>
 A taxon with a genome twice as large contributes roughly twice as many
 reads per cell:</p>
 <p><span class="math display">\[\text{sequence abundance}_i \propto
-\text{taxonomic abundance}_i \times \text{genome size}_i\]</span></p>
+\text{taxonomic abundance}_i \times \text{genome size}_i\]</span>
+Polyploidy (a cell or an organism possessing three or more complete sets
+of chromosomes) further complicates this relationship.</p>
 <div id="challenge-1-same-cells-different-numbers" class="callout challenge">
 <div class="callout-square">
 <i class="callout-icon" data-feather="zap"></i>
@@ -756,24 +757,27 @@ reported.</p>
 </h2>
 <hr class="half-width">
 <p><strong>Average nucleotide identity (ANI)</strong> measures how
-similar two genomes are. Genomes with roughly ≥ 95% ANI are usually
-considered the same species, which is the species definition GTDB
-uses.</p>
+similar two genomes are. Genomes with roughly ≥95% ANI are usually
+considered the same species. GTDB uses this criteria to (re-)classify
+taxonomy.</p>
 <p><strong>Containment ANI</strong> estimates the ANI between a
 <em>reference genome</em> and the <em>reads in a metagenome</em>. It is
 based on the fraction of the reference genome’s k-mers found (contained)
 in the sample. If the reference is present, nearly all its k-mers should
-be found. A lower containment ANI suggests a related strain or species
-rather than the reference itself. At low sequencing depth, many k-mers
-are missed simply by chance. sylph corrects for this and reports an
-<strong>adjusted ANI</strong>.</p>
-<p>In our data, most genomes sylph detected have an adjusted ANI above
-99.5%: the reads came from that genome, or one almost identical to it.
-<em>Gemella morbillorum</em> in <code>Gut_sample1</code>, for example,
-has 99.98%. <em>Ruminococcus_B gnavus</em> has 97.1%: the simulated
-strain is a different strain of the same species as the GTDB reference
-genome.</p>
-</section><section><h2 class="section-heading" id="the-four-profilers">The four profilers<a class="anchor" aria-label="anchor" href="#the-four-profilers"></a>
+be found. A lower containment ANI suggests a related strain or species,
+instead of a reference match. At low sequencing depth, many k-mers are
+missed simply by chance. <code>Sylph</code> corrects for this and
+reports an <strong>adjusted ANI</strong>.</p>
+<p>In our data, most genomes detected by <code>Sylph</code> have an
+adjusted ANI above 99.5%. A high adjusted contaiment ANI means that
+either the reads came from that genome or they are almost identical to
+it.</p>
+<ul>
+<li>
+<em>Gemella morbillorum</em> (99.98% ANI): The sample’s genome is
+practically identical to the reference genome. The reads were simulated
+from the same strain that is in the database.</li>
+</ul></section><section><h2 class="section-heading" id="the-four-profilers">The four profilers<a class="anchor" aria-label="anchor" href="#the-four-profilers"></a>
 </h2>
 <hr class="half-width">
 <table class="table">
@@ -883,8 +887,9 @@ a quarter of the reads stay unclassified.</li>
 <li>
 <strong>sylph:</strong> very fast, accurate at species level,
 reports both abundance types, and its ANI output helps tell strains
-apart. Only as good as its genome database (GTDB covers bacteria and
-archaea only), and uses GTDB names.</li>
+apart. There is an option to use NCBI RefSeq fungal reference database,
+however, whether or not the algorithm works well with eukaryotic genomes
+is still unclear.</li>
 </ul>
 <div id="challenge-2-pick-a-profiler" class="callout challenge">
 <div class="callout-square">
@@ -903,8 +908,8 @@ that are missing from reference databases.</li>
 needs read counts.</li>
 <li>Your samples may contain DNA viruses and fungi as well as
 bacteria.</li>
-<li>You want to compare cell proportions with flow-cytometry
-estimates.</li>
+<li>You want to compare cell proportions with flow-cytometry estimates
+(give cells/gram).</li>
 </ol>
 </div>
 </div>
@@ -969,8 +974,8 @@ types, should not be mixed in one analysis.</li>
 (marker genes, k-mers, sketching) and type of abundance, and all three
 affect the results.</li>
 <li>Sequence abundance (fraction of reads) and taxonomic abundance
-(fraction of cells) differ systematically because genome sizes
-differ.</li>
+(fraction of cells) differ systematically because of variation in genome
+sizes and polyploidy.</li>
 <li>Containment ANI estimates how much of a reference genome is
 “contained” in the sample.</li>
 <li>Choose the profiler and abundance type that match your research
@@ -985,7 +990,7 @@ any links that you are not going to use.
  -->
 </section></section><section id="aio-03-community-analysis"><p>Content from <a href="03-community-analysis.html">Community analysis and comparing taxonomic profilers: practice</a></p>
 <hr>
-<p>Last updated on 2026-11-03 |
+<p>Last updated on 2026-11-04 |
 
         <a href="https://github.com/melbournebioinformatics/workbench-template-rmd/edit/main/episodes/03-community-analysis.Rmd" class="external-link">Edit this page <i aria-hidden="true" data-feather="edit"></i></a></p>
 <div class="text-end">
@@ -1466,11 +1471,12 @@ ID:</p>
 <div id="challenge-2-mapping-by-name" class="callout-inner">
 <h3 class="callout-title">Challenge 2: Mapping by name</h3>
 <div class="callout-content">
-<p>The mapping table has two GTDB columns.
+<p>The mapping table has two GTDB columns, corresponding to two methods
+to translate an NCBI name to a GTDB name.
 <code>gtdb_r220_species_by_name</code> is what you get by looking up the
-NCBI species name in GTDB, which places it with its type strain.
-<code>gtdb_r220_species</code> was checked against the genomes that were
-actually simulated.</p>
+NCBI species name in GTDB, which return the species’ reference type
+strain. <code>gtdb_r220_species</code> returns the GTDB species of the
+genome that was actually used to simulate the reads.</p>
 <ol style="list-style-type: decimal">
 <li>For how many species do the two columns differ?</li>
 <li>Map sylph’s output with
@@ -2029,19 +2035,19 @@ mOTUs start with few false positives, and sylph has almost none.</p>
 <div id="is-sylph-really-that-good" class="callout-inner">
 <h3 class="callout-title">Is sylph really that good?</h3>
 <div class="callout-content">
-<p>sylph is close to perfect on these data. Before you choose it for
-your own study, think about why it does so well here:</p>
+<p>sylph is almost perfect on these data, but be careful before choosing
+it for your own study. It does well here partly because of how this
+benchmark was built:</p>
 <ul>
-<li>The genomes used to simulate the reads (or genomes ≥ 97% identical
-to them) are in its GTDB database. Real samples contain many species
-without a close reference genome.</li>
-<li>The reads are simulated, with no host DNA, contamination or
-sequencing artefacts.</li>
-<li>The GTDB names of 12 truth species were assigned with the help of
-sylph’s own output (see Challenge 2).</li>
+<li>The right answers are in its database. The genomes used to simulate
+the reads (or near-identical ones) are all in sylph’s GTDB database.
+Real samples contain many species with no close reference genome.
+However, this also applies to other profilers in this workshop.</li>
+<li>The reads are clean. They are simulated, so there is no host DNA,
+contamination or sequencing error.</li>
 </ul>
-<p>The ranking of profilers on a benchmark depends on how the benchmark
-was built.</p>
+<p>A benchmark’s ranking of profilers depends on how the benchmark was
+built. A different dataset could rank them differently.</p>
 </div>
 </div>
 </div>
@@ -2221,9 +2227,9 @@ a principal coordinates analysis (PCoA):</p>
 <span><span class="fu">plotReducedDim</span><span class="op">(</span><span class="va">tse</span>, <span class="st">"PCoA_BC"</span>, colour_by <span class="op">=</span> <span class="st">"method"</span>,</span>
 <span>               shape_by <span class="op">=</span> <span class="st">"sample_id"</span>, point_size <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></code></pre>
 </div>
-<figure><img src="fig/03-pcoa-1.png" alt="PCoA of Bray-Curtis dissimilarities, coloured by method and shaped by sample" style="display: block; margin: auto;" class="figure mx-auto d-block"></figure><p>The points form five tight groups, one per sample: the samples differ
-much more from each other than the profilers differ from each other.
-Within each group, the profiler still moves the point.</p>
+<figure><img src="fig/03-pcoa-1.png" alt="PCoA of Bray-Curtis dissimilarities, coloured by method and shaped by sample" style="display: block; margin: auto;" class="figure mx-auto d-block"></figure><p>The samples differ much more from each other than the profilers
+differ from each other. Within each group, the profiler still moves the
+point.</p>
 <p>How much of the variation does each factor explain? PERMANOVA
 (<code>vegan::adonis2()</code>) partitions the dissimilarities between
 sample and method:</p>
@@ -2289,12 +2295,10 @@ spread.</p>
 <h3 class="callout-title">What does 4.5% mean for a real study?</h3>
 <div class="callout-content">
 <p>Here the samples are very different from each other, so the profiler
-effect looks small. In a real study, the differences between your groups
-(e.g. patients and controls) may well be smaller than 4.5% of the
-variation. What would happen if half of your samples were profiled with
-one tool and half with another? What if one group’s profiles were
-downloaded from a public resource made with a different database
-version?</p>
+effect looks small. What would happen if half of your samples were
+profiled with one tool and half with another? What if one group’s
+profiles were downloaded from a public resource made with a different
+database version?</p>
 </div>
 </div>
 </div>
@@ -2332,7 +2336,7 @@ any links that you are not going to use.
  -->
 </section></section><section id="aio-04-differential-abundance"><p>Content from <a href="04-differential-abundance.html">Differential abundance testing</a></p>
 <hr>
-<p>Last updated on 2026-11-03 |
+<p>Last updated on 2026-11-04 |
 
         <a href="https://github.com/melbournebioinformatics/workbench-template-rmd/edit/main/episodes/04-differential-abundance.Rmd" class="external-link">Edit this page <i aria-hidden="true" data-feather="edit"></i></a></p>
 <div class="text-end">
@@ -2902,7 +2906,7 @@ analysis but not in the other?</p>
 <button class="accordion-button solution-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSolution1" aria-expanded="false" aria-controls="collapseSolution1">
   <h4 class="accordion-header" id="headingSolution1"> Show me the solution </h4>
 </button>
-<div id="collapseSolution1" class="accordion-collapse collapse" data-bs-parent="#accordionSolution1" aria-labelledby="headingSolution1">
+<div id="collapseSolution1" class="accordion-collapse collapse" aria-labelledby="headingSolution1" data-bs-parent="#accordionSolution1">
 <div class="accordion-body">
 <div class="codewrapper sourceCode" id="cb20">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
@@ -3072,7 +3076,7 @@ including the fold change and its 95% confidence interval.</p>
 <button class="accordion-button solution-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSolution2" aria-expanded="false" aria-controls="collapseSolution2">
   <h4 class="accordion-header" id="headingSolution2"> Show me the solution </h4>
 </button>
-<div id="collapseSolution2" class="accordion-collapse collapse" data-bs-parent="#accordionSolution2" aria-labelledby="headingSolution2">
+<div id="collapseSolution2" class="accordion-collapse collapse" aria-labelledby="headingSolution2" data-bs-parent="#accordionSolution2">
 <div class="accordion-body">
 <div class="codewrapper sourceCode" id="cb26">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
@@ -3132,7 +3136,7 @@ any links that you are not going to use.
 </div>
 </section></section><section id="aio-05-wrap-up"><p>Content from <a href="05-wrap-up.html">Wrap up</a></p>
 <hr>
-<p>Last updated on 2026-11-03 |
+<p>Last updated on 2026-11-04 |
 
         <a href="https://github.com/melbournebioinformatics/workbench-template-rmd/edit/main/episodes/05-wrap-up.Rmd" class="external-link">Edit this page <i aria-hidden="true" data-feather="edit"></i></a></p>
 <div class="text-end">
@@ -3329,9 +3333,9 @@ any links that you are not going to use.
   "creativeWorkStatus": "active",
   "url": "melbournebioinformatics.github.io/uom-varnish/aio.html",
   "identifier": "melbournebioinformatics.github.io/uom-varnish/aio.html",
-  "dateCreated": "2026-11-03",
-  "dateModified": "2026-11-03",
-  "datePublished": "2026-11-03"
+  "dateCreated": "2026-11-04",
+  "dateModified": "2026-11-04",
+  "datePublished": "2026-11-04"
 }
 
   </script><script>

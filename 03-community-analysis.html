@@ -322,7 +322,7 @@
       </div>
       <hr></nav><main id="main-content" class="main-content"><div class="container lesson-content">
         <h1>Community analysis and comparing taxonomic profilers: practice</h1>
-        <p>Last updated on 2026-11-03 |
+        <p>Last updated on 2026-11-04 |
 
         <a href="https://github.com/melbournebioinformatics/workbench-template-rmd/edit/main/episodes/03-community-analysis.Rmd" class="external-link">Edit this page <i aria-hidden="true" data-feather="edit"></i></a></p>
 
@@ -769,11 +769,12 @@ ID:</p>
 <div id="challenge-2-mapping-by-name" class="callout-inner">
 <h3 class="callout-title">Challenge 2: Mapping by name</h3>
 <div class="callout-content">
-<p>The mapping table has two GTDB columns.
+<p>The mapping table has two GTDB columns, corresponding to two methods
+to translate an NCBI name to a GTDB name.
 <code>gtdb_r220_species_by_name</code> is what you get by looking up the
-NCBI species name in GTDB, which places it with its type strain.
-<code>gtdb_r220_species</code> was checked against the genomes that were
-actually simulated.</p>
+NCBI species name in GTDB, which return the species’ reference type
+strain. <code>gtdb_r220_species</code> returns the GTDB species of the
+genome that was actually used to simulate the reads.</p>
 <ol style="list-style-type: decimal"><li>For how many species do the two columns differ?</li>
 <li>Map sylph’s output with
 <code>gtdb_column = "gtdb_r220_species_by_name"</code>. How many sylph
@@ -1296,17 +1297,17 @@ mOTUs start with few false positives, and sylph has almost none.</p>
 <div id="is-sylph-really-that-good" class="callout-inner">
 <h3 class="callout-title">Is sylph really that good?</h3>
 <div class="callout-content">
-<p>sylph is close to perfect on these data. Before you choose it for
-your own study, think about why it does so well here:</p>
-<ul><li>The genomes used to simulate the reads (or genomes ≥ 97% identical
-to them) are in its GTDB database. Real samples contain many species
-without a close reference genome.</li>
-<li>The reads are simulated, with no host DNA, contamination or
-sequencing artefacts.</li>
-<li>The GTDB names of 12 truth species were assigned with the help of
-sylph’s own output (see Challenge 2).</li>
-</ul><p>The ranking of profilers on a benchmark depends on how the benchmark
-was built.</p>
+<p>sylph is almost perfect on these data, but be careful before choosing
+it for your own study. It does well here partly because of how this
+benchmark was built:</p>
+<ul><li>The right answers are in its database. The genomes used to simulate
+the reads (or near-identical ones) are all in sylph’s GTDB database.
+Real samples contain many species with no close reference genome.
+However, this also applies to other profilers in this workshop.</li>
+<li>The reads are clean. They are simulated, so there is no host DNA,
+contamination or sequencing error.</li>
+</ul><p>A benchmark’s ranking of profilers depends on how the benchmark was
+built. A different dataset could rank them differently.</p>
 </div>
 </div>
 </div>
@@ -1480,9 +1481,9 @@ a principal coordinates analysis (PCoA):</p>
 <span><span class="fu">plotReducedDim</span><span class="op">(</span><span class="va">tse</span>, <span class="st">"PCoA_BC"</span>, colour_by <span class="op">=</span> <span class="st">"method"</span>,</span>
 <span>               shape_by <span class="op">=</span> <span class="st">"sample_id"</span>, point_size <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></code></pre>
 </div>
-<figure><img src="fig/03-pcoa-1.png" alt="PCoA of Bray-Curtis dissimilarities, coloured by method and shaped by sample" style="display: block; margin: auto;" class="figure mx-auto d-block"></figure><p>The points form five tight groups, one per sample: the samples differ
-much more from each other than the profilers differ from each other.
-Within each group, the profiler still moves the point.</p>
+<figure><img src="fig/03-pcoa-1.png" alt="PCoA of Bray-Curtis dissimilarities, coloured by method and shaped by sample" style="display: block; margin: auto;" class="figure mx-auto d-block"></figure><p>The samples differ much more from each other than the profilers
+differ from each other. Within each group, the profiler still moves the
+point.</p>
 <p>How much of the variation does each factor explain? PERMANOVA
 (<code>vegan::adonis2()</code>) partitions the dissimilarities between
 sample and method:</p>
@@ -1548,12 +1549,10 @@ spread.</p>
 <h3 class="callout-title">What does 4.5% mean for a real study?</h3>
 <div class="callout-content">
 <p>Here the samples are very different from each other, so the profiler
-effect looks small. In a real study, the differences between your groups
-(e.g. patients and controls) may well be smaller than 4.5% of the
-variation. What would happen if half of your samples were profiled with
-one tool and half with another? What if one group’s profiles were
-downloaded from a public resource made with a different database
-version?</p>
+effect looks small. What would happen if half of your samples were
+profiled with one tool and half with another? What if one group’s
+profiles were downloaded from a public resource made with a different
+database version?</p>
 </div>
 </div>
 </div>
@@ -1646,9 +1645,9 @@ any links that you are not going to use.
   "creativeWorkStatus": "active",
   "url": "melbournebioinformatics.github.io/uom-varnish/03-community-analysis.html",
   "identifier": "melbournebioinformatics.github.io/uom-varnish/03-community-analysis.html",
-  "dateCreated": "2026-11-03",
-  "dateModified": "2026-11-03",
-  "datePublished": "2026-11-03"
+  "dateCreated": "2026-11-04",
+  "dateModified": "2026-11-04",
+  "datePublished": "2026-11-04"
 }
 
   </script><script>

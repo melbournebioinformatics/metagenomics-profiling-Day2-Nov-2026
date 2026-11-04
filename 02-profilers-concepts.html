@@ -319,7 +319,7 @@
       </div>
       <hr></nav><main id="main-content" class="main-content"><div class="container lesson-content">
         <h1>Comparing taxonomic profilers: concepts</h1>
-        <p>Last updated on 2026-11-03 |
+        <p>Last updated on 2026-11-04 |
 
         <a href="https://github.com/melbournebioinformatics/workbench-template-rmd/edit/main/episodes/02-profilers-concepts.Rmd" class="external-link">Edit this page <i aria-hidden="true" data-feather="edit"></i></a></p>
 
@@ -369,15 +369,13 @@ other outputs as complementary information</li>
 <hr class="half-width"><p>A taxonomic profiler answers two questions: <em>who is there?</em>
 and <em>how much of each?</em> Each profiler’s answer depends on three
 choices:</p>
-<ol style="list-style-type: decimal"><li>the <strong>reference database</strong> it compares reads
-against;</li>
-<li>the <strong>method</strong> it uses to assign reads, or parts of
-reads, to taxa;</li>
-<li>the <strong>type of abundance</strong> it reports.</li>
+<ol style="list-style-type: decimal"><li>the <strong>reference database</strong> used for profiling;</li>
+<li>the <strong>method</strong> used to assign reads, or parts of reads,
+to taxa;</li>
+<li>the <strong>type of abundance</strong> being reported.</li>
 </ol><p>Two profilers that differ in any of these can give different results
-for the same sample, and both can be “correct”. Before we compare the
-outputs in R (next episode), we need to understand these
-differences.</p>
+for the same sample, and none is wrong! Before we compare the outputs in
+R (next episode), we need to understand these differences.</p>
 </section><section><h2 class="section-heading" id="reference-databases-the-two-pillars">Reference databases: the two pillars<a class="anchor" aria-label="anchor" href="#reference-databases-the-two-pillars"></a></h2>
 <hr class="half-width"><p>Most metagenomic databases are built on one of two taxonomies:</p>
 <table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr><th></th>
@@ -411,14 +409,15 @@ such as <code>Clostridium_A</code>
 built</td>
 <td>Numbered releases, about once a year. The sylph database used in
 this workshop is <strong>GTDB R220</strong> (April 2024)</td>
-</tr></tbody></table><p>In the Sun et al data, the same <em>Clostridium perfringens</em>
+</tr></tbody></table><p>In the Sun <em>et al.</em> data, <em>Clostridium perfringens</em>
 genome is called <em>Sarcina perfringens</em> by GTDB, and
-<em>[Ruminococcus] gnavus</em> is <em>Ruminococcus_B gnavus</em>. The
-differences reach the top of the tree too. For <code>Gut_sample1</code>,
-MetaPhlAn (NCBI) puts 66.9% of the community in the phylum Firmicutes,
-while sylph (GTDB R220) splits the same species across four phyla:
-<em>Bacillota</em> (32.7%), <em>Bacillota_A</em> (26.9%),
-<em>Bacillota_C</em> (5.8%) and <em>Bacillota_I</em> (2.5%).</p>
+<em>[Ruminococcus] gnavus</em> is <em>Ruminococcus_B gnavus</em>. This
+disparity even exits at a higher taxonomic level. For
+<code>Gut_sample1</code>, MetaPhlAn (NCBI) puts 66.9% of the community
+in the phylum Firmicutes, while sylph (GTDB R220) splits the same
+species across four phyla: <em>Bacillota</em> (32.7%),
+<em>Bacillota_A</em> (26.9%), <em>Bacillota_C</em> (5.8%) and
+<em>Bacillota_I</em> (2.5%).</p>
 <div id="names-are-not-interchangeable" class="callout">
 <div class="callout-square">
 <i class="callout-icon" data-feather="bell"></i>
@@ -458,7 +457,9 @@ spike-ins, qPCR or flow cytometry.</li>
 A taxon with a genome twice as large contributes roughly twice as many
 reads per cell:</p>
 <p><span class="math display">\[\text{sequence abundance}_i \propto
-\text{taxonomic abundance}_i \times \text{genome size}_i\]</span></p>
+\text{taxonomic abundance}_i \times \text{genome size}_i\]</span>
+Polyploidy (a cell or an organism possessing three or more complete sets
+of chromosomes) further complicates this relationship.</p>
 <div id="challenge-1-same-cells-different-numbers" class="callout challenge">
 <div class="callout-square">
 <i class="callout-icon" data-feather="zap"></i>
@@ -492,24 +493,26 @@ reported.</p>
 </div>
 </section><section><h2 class="section-heading" id="ani-and-containment-ani">ANI and containment ANI<a class="anchor" aria-label="anchor" href="#ani-and-containment-ani"></a></h2>
 <hr class="half-width"><p><strong>Average nucleotide identity (ANI)</strong> measures how
-similar two genomes are. Genomes with roughly ≥ 95% ANI are usually
-considered the same species, which is the species definition GTDB
-uses.</p>
+similar two genomes are. Genomes with roughly ≥95% ANI are usually
+considered the same species. GTDB uses this criteria to (re-)classify
+taxonomy.</p>
 <p><strong>Containment ANI</strong> estimates the ANI between a
 <em>reference genome</em> and the <em>reads in a metagenome</em>. It is
 based on the fraction of the reference genome’s k-mers found (contained)
 in the sample. If the reference is present, nearly all its k-mers should
-be found. A lower containment ANI suggests a related strain or species
-rather than the reference itself. At low sequencing depth, many k-mers
-are missed simply by chance. sylph corrects for this and reports an
-<strong>adjusted ANI</strong>.</p>
-<p>In our data, most genomes sylph detected have an adjusted ANI above
-99.5%: the reads came from that genome, or one almost identical to it.
-<em>Gemella morbillorum</em> in <code>Gut_sample1</code>, for example,
-has 99.98%. <em>Ruminococcus_B gnavus</em> has 97.1%: the simulated
-strain is a different strain of the same species as the GTDB reference
-genome.</p>
-</section><section><h2 class="section-heading" id="the-four-profilers">The four profilers<a class="anchor" aria-label="anchor" href="#the-four-profilers"></a></h2>
+be found. A lower containment ANI suggests a related strain or species,
+instead of a reference match. At low sequencing depth, many k-mers are
+missed simply by chance. <code>Sylph</code> corrects for this and
+reports an <strong>adjusted ANI</strong>.</p>
+<p>In our data, most genomes detected by <code>Sylph</code> have an
+adjusted ANI above 99.5%. A high adjusted contaiment ANI means that
+either the reads came from that genome or they are almost identical to
+it.</p>
+<ul><li>
+<em>Gemella morbillorum</em> (99.98% ANI): The sample’s genome is
+practically identical to the reference genome. The reads were simulated
+from the same strain that is in the database.</li>
+</ul></section><section><h2 class="section-heading" id="the-four-profilers">The four profilers<a class="anchor" aria-label="anchor" href="#the-four-profilers"></a></h2>
 <hr class="half-width"><table class="table"><colgroup><col width="20%"><col width="20%"><col width="20%"><col width="20%"><col width="20%"></colgroup><thead><tr><th></th>
 <th>MetaPhlAn</th>
 <th>mOTUs</th>
@@ -590,8 +593,9 @@ a quarter of the reads stay unclassified.</li>
 <li>
 <strong>sylph:</strong> very fast, accurate at species level,
 reports both abundance types, and its ANI output helps tell strains
-apart. Only as good as its genome database (GTDB covers bacteria and
-archaea only), and uses GTDB names.</li>
+apart. There is an option to use NCBI RefSeq fungal reference database,
+however, whether or not the algorithm works well with eukaryotic genomes
+is still unclear.</li>
 </ul><div id="challenge-2-pick-a-profiler" class="callout challenge">
 <div class="callout-square">
 <i class="callout-icon" data-feather="zap"></i>
@@ -608,8 +612,8 @@ that are missing from reference databases.</li>
 needs read counts.</li>
 <li>Your samples may contain DNA viruses and fungi as well as
 bacteria.</li>
-<li>You want to compare cell proportions with flow-cytometry
-estimates.</li>
+<li>You want to compare cell proportions with flow-cytometry estimates
+(give cells/gram).</li>
 </ol></div>
 </div>
 </div>
@@ -666,8 +670,8 @@ types, should not be mixed in one analysis.</li>
 (marker genes, k-mers, sketching) and type of abundance, and all three
 affect the results.</li>
 <li>Sequence abundance (fraction of reads) and taxonomic abundance
-(fraction of cells) differ systematically because genome sizes
-differ.</li>
+(fraction of cells) differ systematically because of variation in genome
+sizes and polyploidy.</li>
 <li>Containment ANI estimates how much of a reference genome is
 “contained” in the sample.</li>
 <li>Choose the profiler and abundance type that match your research
@@ -738,9 +742,9 @@ any links that you are not going to use.
   "creativeWorkStatus": "active",
   "url": "melbournebioinformatics.github.io/uom-varnish/02-profilers-concepts.html",
   "identifier": "melbournebioinformatics.github.io/uom-varnish/02-profilers-concepts.html",
-  "dateCreated": "2026-11-03",
-  "dateModified": "2026-11-03",
-  "datePublished": "2026-11-03"
+  "dateCreated": "2026-11-04",
+  "dateModified": "2026-11-04",
+  "datePublished": "2026-11-04"
 }
 
   </script><script>
