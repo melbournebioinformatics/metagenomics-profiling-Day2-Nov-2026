@@ -225,7 +225,7 @@ All but one of sylph's species map to a truth species. The exception, *Bifidobac
 
 ### Challenge 2: Mapping by name
 
-The mapping table has two GTDB columns. `gtdb_r220_species_by_name` is what you get by looking up the NCBI species name in GTDB, which places it with its type strain. `gtdb_r220_species` was checked against the genomes that were actually simulated.
+The mapping table has two GTDB columns, corresponding to two methods to translate an NCBI name to a GTDB name. `gtdb_r220_species_by_name` is what you get by looking up the NCBI species name in GTDB, which return the species' reference type strain. `gtdb_r220_species` returns the GTDB species of the genome that was actually used to simulate the reads. 
 
 1. For how many species do the two columns differ?
 2. Map sylph's output with `gtdb_column = "gtdb_r220_species_by_name"`. How many sylph species now fail to map?
@@ -544,13 +544,12 @@ Without a threshold, Bracken finds almost every true species (recall 0.99), but 
 
 ### Is sylph really that good?
 
-sylph is close to perfect on these data. Before you choose it for your own study, think about why it does so well here:
+sylph is almost perfect on these data, but be careful before choosing it for your own study. It does well here partly because of how this benchmark was built:
 
-- The genomes used to simulate the reads (or genomes ≥ 97% identical to them) are in its GTDB database. Real samples contain many species without a close reference genome.
-- The reads are simulated, with no host DNA, contamination or sequencing artefacts.
-- The GTDB names of 12 truth species were assigned with the help of sylph's own output (see Challenge 2).
+- The right answers are in its database. The genomes used to simulate the reads (or near-identical ones) are all in sylph’s GTDB database. Real samples contain many species with no close reference genome. However, this also applies to other profilers in this workshop.
+- The reads are clean. They are simulated, so there is no host DNA, contamination or sequencing error.
 
-The ranking of profilers on a benchmark depends on how the benchmark was built.
+A benchmark’s ranking of profilers depends on how the benchmark was built. A different dataset could rank them differently.
 
 ::::::::::::::::::::::::::::::::::::::::::::::::
 
@@ -660,7 +659,7 @@ plotReducedDim(tse, "PCoA_BC", colour_by = "method",
 knitr::include_graphics(precomputed$figs[["pcoa"]])
 ```
 
-The points form five tight groups, one per sample: the samples differ much more from each other than the profilers differ from each other. Within each group, the profiler still moves the point.
+The samples differ much more from each other than the profilers differ from each other. Within each group, the profiler still moves the point.
 
 How much of the variation does each factor explain? PERMANOVA (`vegan::adonis2()`) partitions the dissimilarities between sample and method:
 
@@ -694,7 +693,7 @@ The spread is the same for all methods (p ≈ 1), so the PERMANOVA result reflec
 
 ### What does 4.5% mean for a real study?
 
-Here the samples are very different from each other, so the profiler effect looks small. In a real study, the differences between your groups (e.g. patients and controls) may well be smaller than 4.5% of the variation. What would happen if half of your samples were profiled with one tool and half with another? What if one group's profiles were downloaded from a public resource made with a different database version?
+Here the samples are very different from each other, so the profiler effect looks small. What would happen if half of your samples were profiled with one tool and half with another? What if one group's profiles were downloaded from a public resource made with a different database version?
 
 ::::::::::::::::::::::::::::::::::::::::::::::::
 
