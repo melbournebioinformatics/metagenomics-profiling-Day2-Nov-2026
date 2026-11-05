@@ -356,7 +356,7 @@
         
 <section id="aio-01-recap"><p>Content from <a href="01-recap.html">Recap from Day 1</a></p>
 <hr>
-<p>Last updated on 2026-11-04 |
+<p>Last updated on 2026-11-05 |
 
         <a href="https://github.com/melbournebioinformatics/workbench-template-rmd/edit/main/episodes/01-recap.Rmd" class="external-link">Edit this page <i aria-hidden="true" data-feather="edit"></i></a></p>
 <p>Estimated time: <i aria-hidden="true" data-feather="clock"></i> 10 minutes</p>
@@ -557,7 +557,7 @@ any links that you are not going to use.
  -->
 </section></section><section id="aio-02-profilers-concepts"><p>Content from <a href="02-profilers-concepts.html">Comparing taxonomic profilers: concepts</a></p>
 <hr>
-<p>Last updated on 2026-11-04 |
+<p>Last updated on 2026-11-05 |
 
         <a href="https://github.com/melbournebioinformatics/workbench-template-rmd/edit/main/episodes/02-profilers-concepts.Rmd" class="external-link">Edit this page <i aria-hidden="true" data-feather="edit"></i></a></p>
 <p>Estimated time: <i aria-hidden="true" data-feather="clock"></i> 45 minutes</p>
@@ -996,7 +996,7 @@ any links that you are not going to use.
  -->
 </section></section><section id="aio-03-community-analysis"><p>Content from <a href="03-community-analysis.html">Community analysis and comparing taxonomic profilers: practice</a></p>
 <hr>
-<p>Last updated on 2026-11-04 |
+<p>Last updated on 2026-11-05 |
 
         <a href="https://github.com/melbournebioinformatics/workbench-template-rmd/edit/main/episodes/03-community-analysis.Rmd" class="external-link">Edit this page <i aria-hidden="true" data-feather="edit"></i></a></p>
 <p>Estimated time: <i aria-hidden="true" data-feather="clock"></i> 75 minutes</p>
@@ -1044,7 +1044,7 @@ truth (Bray–Curtis, rJSD, L1, L2, rAD)</li>
 <button class="accordion-button instructor-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseInstructor1" aria-expanded="false" aria-controls="collapseInstructor1">
   <h3 class="accordion-header" id="headingInstructor1">  <div class="note-square"><i aria-hidden="true" class="callout-icon" data-feather="edit-2"></i></div> Instructor Note </h3>
 </button>
-<div id="collapseInstructor1" class="accordion-collapse collapse" aria-labelledby="headingInstructor1" data-bs-parent="#accordionInstructor1">
+<div id="collapseInstructor1" class="accordion-collapse collapse" data-bs-parent="#accordionInstructor1" aria-labelledby="headingInstructor1">
 <div class="accordion-body">
 <p>Timing: about 15 min on loading the data and the ground-truth
 comparison, 30 min on alpha diversity, 30 min on beta diversity.
@@ -1294,7 +1294,7 @@ How abundant are the species there?</li>
 <button class="accordion-button solution-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSolution1" aria-expanded="false" aria-controls="collapseSolution1">
   <h4 class="accordion-header" id="headingSolution1"> Show me the solution </h4>
 </button>
-<div id="collapseSolution1" class="accordion-collapse collapse" aria-labelledby="headingSolution1" data-bs-parent="#accordionSolution1">
+<div id="collapseSolution1" class="accordion-collapse collapse" data-bs-parent="#accordionSolution1" aria-labelledby="headingSolution1">
 <div class="accordion-body">
 <div class="codewrapper sourceCode" id="cb9">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
@@ -1468,7 +1468,7 @@ ID:</p>
 <span>  <span class="va">lookup</span> <span class="op">&lt;-</span> <span class="fu">select</span><span class="op">(</span><span class="va">gtdb_map</span>, ncbi_id <span class="op">=</span> <span class="va">taxonomy_id</span>,</span>
 <span>                   gtdb <span class="op">=</span> <span class="fu">all_of</span><span class="op">(</span><span class="va">gtdb_column</span><span class="op">)</span><span class="op">)</span></span>
 <span>  <span class="va">sylph_table</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu">left_join</span><span class="op">(</span><span class="va">lookup</span>, by <span class="op">=</span> <span class="fu">c</span><span class="op">(</span><span class="st">"name"</span> <span class="op">=</span> <span class="st">"gtdb"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu">dplyr</span><span class="fu">::</span><span class="fu">left_join</span><span class="op">(</span><span class="va">lookup</span>, by <span class="op">=</span> <span class="fu">c</span><span class="op">(</span><span class="st">"name"</span> <span class="op">=</span> <span class="st">"gtdb"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu">mutate</span><span class="op">(</span>taxonomy_id <span class="op">=</span> <span class="fu">coalesce</span><span class="op">(</span><span class="va">ncbi_id</span>, <span class="va">taxonomy_id</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu">select</span><span class="op">(</span><span class="op">-</span><span class="va">ncbi_id</span>, <span class="op">-</span><span class="va">gtdb_lineage</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
@@ -1519,7 +1519,7 @@ species now fail to map?</li>
 <button class="accordion-button solution-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSolution2" aria-expanded="false" aria-controls="collapseSolution2">
   <h4 class="accordion-header" id="headingSolution2"> Show me the solution </h4>
 </button>
-<div id="collapseSolution2" class="accordion-collapse collapse" aria-labelledby="headingSolution2" data-bs-parent="#accordionSolution2">
+<div id="collapseSolution2" class="accordion-collapse collapse" data-bs-parent="#accordionSolution2" aria-labelledby="headingSolution2">
 <div class="accordion-body">
 <div class="codewrapper sourceCode" id="cb25">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
@@ -1581,7 +1581,7 @@ mapping across taxonomies can make a correct profiler look wrong.</li>
 <button class="accordion-button instructor-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseInstructor2" aria-expanded="false" aria-controls="collapseInstructor2">
   <h3 class="accordion-header" id="headingInstructor2">  <div class="note-square"><i aria-hidden="true" class="callout-icon" data-feather="edit-2"></i></div> Instructor Note </h3>
 </button>
-<div id="collapseInstructor2" class="accordion-collapse collapse" aria-labelledby="headingInstructor2" data-bs-parent="#accordionInstructor2">
+<div id="collapseInstructor2" class="accordion-collapse collapse" data-bs-parent="#accordionInstructor2" aria-labelledby="headingInstructor2">
 <div class="accordion-body">
 <p>How <code>gtdb_r220_species</code> was checked: for each of the 12
 split species, sylph reported a GTDB species that had the same
@@ -1957,7 +1957,7 @@ each profiler report?</p>
 <button class="accordion-button solution-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSolution3" aria-expanded="false" aria-controls="collapseSolution3">
   <h4 class="accordion-header" id="headingSolution3"> Show me the solution </h4>
 </button>
-<div id="collapseSolution3" class="accordion-collapse collapse" aria-labelledby="headingSolution3" data-bs-parent="#accordionSolution3">
+<div id="collapseSolution3" class="accordion-collapse collapse" data-bs-parent="#accordionSolution3" aria-labelledby="headingSolution3">
 <div class="accordion-body">
 <p>rAD works on log-ratios, so a false positive at 0.001% counts as much
 as an error in a species at 10%. Bracken has around 500 low-abundance
@@ -2218,7 +2218,7 @@ affected most?</p>
 <button class="accordion-button solution-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSolution4" aria-expanded="false" aria-controls="collapseSolution4">
   <h4 class="accordion-header" id="headingSolution4"> Show me the solution </h4>
 </button>
-<div id="collapseSolution4" class="accordion-collapse collapse" aria-labelledby="headingSolution4" data-bs-parent="#accordionSolution4">
+<div id="collapseSolution4" class="accordion-collapse collapse" data-bs-parent="#accordionSolution4" aria-labelledby="headingSolution4">
 <div class="accordion-body">
 <div class="codewrapper sourceCode" id="cb52">
 <h3 class="code-label">R<i aria-hidden="true" data-feather="chevron-left"></i><i aria-hidden="true" data-feather="chevron-right"></i>
@@ -2383,7 +2383,7 @@ any links that you are not going to use.
  -->
 </section></section><section id="aio-04-differential-abundance"><p>Content from <a href="04-differential-abundance.html">Differential abundance testing</a></p>
 <hr>
-<p>Last updated on 2026-11-04 |
+<p>Last updated on 2026-11-05 |
 
         <a href="https://github.com/melbournebioinformatics/workbench-template-rmd/edit/main/episodes/04-differential-abundance.Rmd" class="external-link">Edit this page <i aria-hidden="true" data-feather="edit"></i></a></p>
 <p>Estimated time: <i aria-hidden="true" data-feather="clock"></i> 30 minutes</p>
@@ -3203,7 +3203,7 @@ any links that you are not going to use.
 </div>
 </section></section><section id="aio-05-wrap-up"><p>Content from <a href="05-wrap-up.html">Wrap up</a></p>
 <hr>
-<p>Last updated on 2026-11-04 |
+<p>Last updated on 2026-11-05 |
 
         <a href="https://github.com/melbournebioinformatics/workbench-template-rmd/edit/main/episodes/05-wrap-up.Rmd" class="external-link">Edit this page <i aria-hidden="true" data-feather="edit"></i></a></p>
 <p>Estimated time: <i aria-hidden="true" data-feather="clock"></i> 10 minutes</p>
@@ -3401,9 +3401,9 @@ any links that you are not going to use.
   "creativeWorkStatus": "active",
   "url": "melbournebioinformatics.github.io/uom-varnish/instructor/aio.html",
   "identifier": "melbournebioinformatics.github.io/uom-varnish/instructor/aio.html",
-  "dateCreated": "2026-11-04",
-  "dateModified": "2026-11-04",
-  "datePublished": "2026-11-04"
+  "dateCreated": "2026-11-05",
+  "dateModified": "2026-11-05",
+  "datePublished": "2026-11-05"
 }
 
   </script><script>
