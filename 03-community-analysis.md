@@ -301,7 +301,7 @@ add_ncbi_id <- function(sylph_table,
   lookup <- select(gtdb_map, ncbi_id = taxonomy_id,
                    gtdb = all_of(gtdb_column))
   sylph_table |>
-    left_join(lookup, by = c("name" = "gtdb")) |>
+    dplyr::left_join(lookup, by = c("name" = "gtdb")) |>
     mutate(taxonomy_id = coalesce(ncbi_id, taxonomy_id)) |>
     select(-ncbi_id, -gtdb_lineage)
 }
